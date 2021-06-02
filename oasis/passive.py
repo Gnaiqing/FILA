@@ -110,6 +110,10 @@ class PassiveSampler:
         # Array to record history of F-measure estimates
         self._estimate = np.tile(np.nan, [self._max_iter, self._n_class])
 
+        # Array to record history of oracle results
+        self._oracle_results = np.repeat(np.nan, self._max_iter)
+        self._pred_results = np.repeat(np.nan, self._max_iter)
+
     @property
     def estimate_(self):
         if self.t_ == 0:
@@ -153,6 +157,9 @@ class PassiveSampler:
         self._queried_oracle = np.repeat(False, self._max_iter)
         self.cached_labels_ = np.repeat(np.nan, self._n_items)
         self._estimate = np.tile(np.nan, [self._max_iter, self._n_class])
+        # Array to record history of oracle results
+        self._oracle_results = np.repeat(np.nan, self._max_iter)
+        self._pred_results = np.repeat(np.nan, self._max_iter)
 
     def _iterate(self, **kwargs):
         """Procedure for a single iteration (sampling and updating)"""
@@ -160,9 +167,10 @@ class PassiveSampler:
         loc, weight, extra_info = self._sample_item(**kwargs)
         # Query label
         ell = self._query_label(loc)
+        self._oracle_results[self.t_] = ell
         # Get predictions
-        ell_hat = self.predictions[loc,:]
-
+        ell_hat = self.predictions[loc,:][0]
+        self._pred_results[self.t_] = ell_hat
         if self.debug == True:
             print("Sampled label {} for item {}.".format(ell,loc))
 

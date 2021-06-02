@@ -1,4 +1,7 @@
 import numpy as np
+import warnings
+import copy
+from scipy.special import expit
 from .stratification import Strata
 
 def verify_positive(value):
@@ -127,7 +130,10 @@ def scores_to_probs(scores, proba, eps=0.01):
                 max_extreme_score = max(np.abs(np.min(scores[:,m])),\
                                     np.abs(np.max(scores[:,m])))
                 k = np.log((1-eps)/eps)/max_extreme_score # scale factor
-                self._probs[:,m] = expit(k * self.scores[:,m])
+                # self._probs[:,m] = expit(k * self.scores[:,m])
+                probs[:,m] = expit(k * scores[:,m])
+            else:
+                probs[:,m] = scores[:,m]
         return probs
     else:
         return scores
