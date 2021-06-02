@@ -35,7 +35,7 @@ def _heuristic_bin_width(obs):
     return 2*IQR*N**(-1/3)
 
 def stratify_by_scores(scores, goal_n_strata='auto', method='cum_sqrt_F',
-                       n_bins = 'auto'):
+                       n_bins = 'auto', threshold = None):
     """Stratify by binning the items based on their scores
 
     Parameters
@@ -62,14 +62,40 @@ def stratify_by_scores(scores, goal_n_strata='auto', method='cum_sqrt_F',
         and/or when ``method = 'cum_sqrt_F'``. If set to 'auto', the number is
         selected using the Freedman-Diaconis rule.
 
+    threshold: float or 'None', optional, default 'None'
+        score threshold to split the strata. This guarantees that pairs with
+        score < threshold and score>=threshold will be allocated to different strata.
     Returns
     -------
-    Strata instance
+    allocations
     """
 
     available_methods = ['equal_size', 'cum_sqrt_F']
     if method not in available_methods:
         raise ValueError("method argument is invalid")
+
+    if threshold:
+        # split the score based on threshold
+        pos_idx = np.where(scores >= threshold)
+        neg_idx = np.where(scores < threshold)
+        pos_scores = scores[pos_idx]
+        neg_scores = scores[neg_idx]
+        if goal_n_strata == "auto":
+            neg_allocation = stratify_by_scores(neg_scores,goal_n_strata="auto",method=method)
+            neg_n_strata = len(np.unique(neg_allocation))
+            pos_allocation = stratify_by_scores(pos_scores,goal_n_strata="auto",method=method)
+            pos_allocation += neg_n_strata
+        else:
+            neg_allocation = stratify_by_scores(neg_scores,goal_n_strata="auto",method=method)
+            neg_n_strata = len(np.unique(neg_allocation))
+            goal_pos_strata = max(1, goal_n_strata - neg_n_strata)
+            pos_allocation = stratify_by_scores(neg_scores, goal_n_strata=goal_pos_strata,method=method)
+            pos_allocation += neg_n_strata
+
+        allocation = np.zeros(len(scores))
+        allocation[pos_idx] = pos_allocation
+        allocation[neg_idx] = neg_allocation
+        return allocation
 
     if (method == 'cum_sqrt_F') or (goal_n_strata == 'auto'):
         # computation below is needed for cum_sqrt_F method OR if we need to
@@ -147,7 +173,7 @@ def stratify_by_scores(scores, goal_n_strata='auto', method='cum_sqrt_F',
         if n_strata < goal_n_strata:
             warnings.warn("Failed to create {} strata".format(goal_n_strata))
 
-    return Strata(allocations)
+    return allocations
 
 def auto_stratify(scores, **kwargs):
     """Generate Strata instance automatically
@@ -175,13 +201,21 @@ def auto_stratify(scores, **kwargs):
         n_strata = kwargs['stratification_n_strata']
     else:
         n_strata = 'auto'
+
+    if 'stratification_threshold' in kwargs:
+        threshold = kwargs['stratification_threshold']
+    else:
+        threshold = None
+
     if 'stratification_n_bins' in kwargs:
         n_bins = kwargs['stratification_n_bins']
-        strata = stratify_by_scores(scores, n_strata, method = method, \
-                                         n_bins = n_bins)
+        allocations = stratify_by_scores(scores, n_strata, method = method, \
+                                         n_bins = n_bins, threshold=threshold)
     else:
-        strata = stratify_by_scores(scores, n_strata, method = method)
-    return strata
+        allocations = stratify_by_scores(scores, n_strata, method = method, threshold=threshold)
+
+    return Strata(allocations)
+
 
 class Strata:
     """Represents a collection of strata and facilitates sampling from them

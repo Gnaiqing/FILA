@@ -22,9 +22,12 @@ if __name__ == "__main__":
     data = oasis.Data()
     data.read_h5('docs/tutorial/Amazon-GoogleProducts-test.h5')
     data.calc_true_performance() #: calculate true precision, recall, F1-score
+    positive_idx = np.where(data.preds == 1)
+    positive_scores = data.scores[positive_idx]
+    threshold = np.min(positive_scores)
     alpha = 0.5      #: corresponds to F1-score
-    n_labels = 500  #: stop sampling after querying this number of labels
-    max_iter = 1000   #: maximum no. of iterations that can be stored
-    smplr = oasis.OASISSampler(alpha, data.preds, data.scores, oracle, max_iter=max_iter)
+    n_labels = 5000  #: stop sampling after querying this number of labels
+    max_iter = 100000   #: maximum no. of iterations that can be stored
+    smplr = oasis.OASISSampler(alpha, data.preds, data.scores, oracle, max_iter=max_iter,stratification_threshold=threshold)
     smplr.sample_distinct(n_labels)
     plt_estimates(smplr, data.F1_measure)
