@@ -4,6 +4,7 @@ from .sawade import ImportanceSampler
 from .oasis import OASISSampler
 #from .kad import (KadaneSampler, OptKadaneSampler)
 from .druck import DruckSampler
+from .ass import StratifiedSampler
 from .experiments import (repeat_expt, process_expt, Data)
 
 __all__ = ['OASISSampler',
@@ -11,6 +12,7 @@ __all__ = ['OASISSampler',
            #'KadaneSampler',
            #'OptKadaneSampler',
            'DruckSampler',
+           'StratifiedSampler',
            'stratify_by_features',
            'stratify_by_scores',
            'ImportanceSampler',

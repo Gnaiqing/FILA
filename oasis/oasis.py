@@ -130,6 +130,27 @@ class BetaBernoulliModel:
         if self.store_variance:
             self._calc_var_theta()
 
+    def calc_strata_var(self, include_prior=False):
+        """
+        Calculate the empirical variance of each strata
+        :return: var_strata: empirical variance of each strata
+        """
+        if include_prior:
+            if self.decaying_prior:
+                n_sampled = np.clip(self.alpha_ + self.beta_, 1, np.inf)
+                prior_weight = 1/n_sampled
+                alpha = self.alpha_ + prior_weight * self.alpha_0
+                beta = self.beta_ + prior_weight * self.beta_0
+            else:
+                alpha = self.alpha_ + self.alpha_0
+                beta = self.beta_ + self.beta_0
+        else:
+            alpha = self.alpha_
+            beta = self.beta_
+
+        emp_strata_var = (alpha*beta)/((alpha+beta-1)*(alpha+beta))
+        return emp_strata_var
+
     def reset(self):
         """Reset the instance to its initial state"""
         self.alpha_ = np.zeros(self._size, dtype=int)

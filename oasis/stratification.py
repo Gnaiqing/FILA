@@ -396,6 +396,40 @@ class Strata:
         else:
             return np.array([np.mean(values[x]) for x in self.allocations_])
 
+
+    def intra_var(self,values):
+        """
+        Calculate the variance of a quality within strata
+        :param values:  array-like, shape=(n_items,n_class)
+            array containing the values of the quantity for each item in the
+            pool
+        :return: numpy.ndarray, shape=(n_strata,n_class)
+            array containing the variance value of the quantity within each stratum
+        """
+        if values.ndim > 1:
+            return np.array([np.var(values[x,:], axis=0) for x in self.allocations_])
+        else:
+            return np.array([np.var(values[x]) for x in self.allocations_])
+
+
+    def split_by_prediction(self, predictions):
+        """split the strata indexes by whether the prediction is positive"""
+        pos_idx = []
+        neg_idx = []
+        mix_idx = []
+        for stratum_idx in self.indices_:
+            stratum = self.allocations_[stratum_idx]
+            strata_pred = predictions[stratum]
+            if 1 in strata_pred:
+                if 0 in strata_pred:
+                    mix_idx.append(stratum_idx)
+                else:
+                    pos_idx.append(stratum_idx)
+            else:
+                neg_idx.append(stratum_idx)
+
+        return np.array(pos_idx), np.array(neg_idx), np.array(mix_idx)
+
     def reset(self):
         """Reset the instance to begin sampling from scratch"""
         self._sampled = [np.repeat(False, x) for x in self.sizes_]
