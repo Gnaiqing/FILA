@@ -1,0 +1,49 @@
+[
+  {
+    "name" : "OASIS",
+    "smplr" : "OASIS"
+  },
+  {
+    "name": "SS-prop",
+    "smplr": "SS",
+    "sample_config": {
+      "sample_strategy" : "prop"
+    }
+  },
+  {
+    "name": "SS-neyman-oracle",
+    "smplr": "SS",
+    "smplr_config" : {
+      "prior_strength": 0
+    },
+    "sample_config": {
+      "sample_strategy": "neyman",
+      "oracle": true
+    }
+  },
+  {
+    "name": "SS-neyman",
+    "smplr": "SS",
+    "sample_config": {
+      "sample_strategy": "neyman"
+    }
+  },
+  {
+    "name": "SS-opt-oracle",
+    "smplr": "SS",
+    "smplr_config": {
+      "prior_strength": 0
+    },
+    "sample_config": {
+      "sample_strategy": "opt",
+      "oracle": true
+    }
+  },
+  {
+    "name": "SS-opt",
+    "smplr": "SS",
+    "sample_config": {
+      "sample_strategy": "opt"
+    }
+  }
+]

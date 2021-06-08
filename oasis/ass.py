@@ -16,7 +16,7 @@ from .oasis import BetaBernoulliModel
 class StratifiedSampler(PassiveSampler):
     def __init__(self, alpha, predictions, scores, oracle, proba=False,
                  epsilon=1e-3, opt_class=None, prior_strength=None,
-                 decaying_prior=False, strata=None, record_inst_hist=False,
+                 decaying_prior=True, strata=None, record_inst_hist=False,
                  max_iter=None, identifiers=None, debug=False, **kwargs):
         super(StratifiedSampler, self).__init__(alpha, predictions, oracle,
                                            max_iter, identifiers, True, debug)
@@ -62,14 +62,14 @@ class StratifiedSampler(PassiveSampler):
         if prior_strength is None:
             self.prior_strength = 2*self.strata.n_strata_
         else:
-            self.prior_strength = verify_positive(float(self.prior_strength))
+            self.prior_strength = float(prior_strength)
 
         # Instantiate Beta-Bernoulli model using probabilities averaged over
         # opt_class
-        # theta_0 = self.strata.intra_mean(self._probs_avg_opt_class)
-        # gamma = self._calc_BB_prior(theta_0.ravel())
+        theta_0 = self.strata.intra_mean(self._probs_avg_opt_class)
+        gamma = self._calc_BB_prior(theta_0.ravel())
         # Instantiate Beta-Bernoulli model using uniform prior
-        gamma = np.zeros((2,self.strata.n_strata_))
+        # gamma = np.zeros((2,self.strata.n_strata_))
         self._BB_model = BetaBernoulliModel(gamma[0], gamma[1],
                                             decaying_prior=self.decaying_prior)
 
@@ -107,13 +107,13 @@ class StratifiedSampler(PassiveSampler):
         return var_F
 
 
-    def select_stratum(self, sample_strategy, **kwargs):
+    def select_stratum(self, sample_strategy="opt", **kwargs):
         """
         Pick the next stratum to sample from according to sample_strategy
         :param sample_strategy: "ass"
         :return: stratum_idx: index of stratum selected
         """
-        if sample_strategy == "ass":
+        if sample_strategy == "opt":
             assert len(self.mix_strata_idx) == 0
             emp_strata_var = self._BB_model.calc_strata_var(include_prior=True)
             emp_strata_std = np.sqrt(emp_strata_var)
@@ -129,7 +129,19 @@ class StratifiedSampler(PassiveSampler):
             # select the current strata based on greedy search
             ucb = opt_strata_weight / self.strata._n_sampled
             stratum_idx = np.argmax(ucb)
-            return stratum_idx
+        elif sample_strategy == "prop":
+            stratum_idx = self.strata._sample_stratum(pmf=self.strata.weights_)
+        elif sample_strategy == "neyman":
+            emp_strata_var = self._BB_model.calc_strata_var(include_prior=True)
+            emp_strata_std = np.sqrt(emp_strata_var)
+            opt_strata_weight = emp_strata_std*self.strata.sizes_
+            ucb = opt_strata_weight / self.strata._n_sampled
+            stratum_idx = np.argmax(ucb)
+
+        else:
+            raise Exception("sample strategy %s not implemented" % sample_strategy)
+
+        return stratum_idx
 
     def _sample_item(self, **kwargs):
         """Sample an item from the pool
@@ -143,10 +155,8 @@ class StratifiedSampler(PassiveSampler):
             # for each stratified sampling method, we first guarantee at least two points per strata
             if np.min(self.strata._n_sampled) < 2:
                 stratum_idx = np.argmin(self.strata._n_sampled)
-            elif 'sample_strategy' in kwargs:
-                stratum_idx = self.select_stratum(kwargs["sample_strategy"], **kwargs)
             else:
-                stratum_idx = self.select_stratum("ass", **kwargs)
+                stratum_idx = self.select_stratum(**kwargs)
 
         loc = self.strata._sample_in_stratum(stratum_idx,
                                                  replace=self.replace)
@@ -172,14 +182,16 @@ class StratifiedSampler(PassiveSampler):
             if 'sample_strategy' in kwargs:
                 sample_strategy = kwargs["sample_strategy"]
             else:
-                sample_strategy = "ass"
+                sample_strategy = "opt"
 
             if sample_strategy == "prop":
                 sample_weight = self.strata.sizes_
             elif sample_strategy == "neyman":
                 sample_weight = self.strata.sizes_ * np.sqrt(self.strata_var)
-            else:
+            elif sample_strategy == "opt":
                 sample_weight = self.strata.sizes_ * np.sqrt(self.strata_var) * self.partial_weight
+            else:
+                raise Exception("sample strategy %s not implemented." % sample_strategy)
 
             sample_weight = sample_weight / np.sum(sample_weight)
             loc, stratum_idx = self.strata.sample(pmf = sample_weight,

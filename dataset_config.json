@@ -1,0 +1,30 @@
+[
+  {
+    "name": "amazon-google",
+    "path": "datasets/amazon-googleproducts-svm.h5"
+  },
+  {
+    "name": "abt-buy",
+    "path": "datasets/abt-buy-svm.h5"
+  },
+  {
+    "name": "dblp-acm-small",
+    "path": "datasets/dblp-acm-svm-small.h5"
+  },
+  {
+    "name": "restaurant",
+    "path": "datasets/restaurant-svm.h5"
+  },
+  {
+    "name": "creditcard",
+    "path": "datasets/creditcard-lr.h5"
+  },
+  {
+    "name": "safedriver",
+    "path": "datasets/safedriver-xgb.h5"
+  },
+  {
+    "name": "tweets100k",
+    "path": "datasets/tweets100k-svm.h5"
+  }
+]

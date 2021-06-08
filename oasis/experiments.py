@@ -4,7 +4,7 @@ import time
 import logging
 import warnings
 
-def repeat_expt(smplr, n_expts, n_labels, output_file = None):
+def repeat_expt(smplr, n_expts, n_labels, output_file = None, **kwargs):
     """
     Parameters
     ----------
@@ -46,19 +46,19 @@ def repeat_expt(smplr, n_expts, n_labels, output_file = None):
             logging.info("Completed {} of {} experiments".format(i, n_expts))
         ti = time.process_time()
         smplr.reset()
-        smplr.sample_distinct(n_labels)
+        smplr.sample_distinct(n_labels, **kwargs)
         tf = time.process_time()
         if hasattr(smplr, 'queried_oracle_'):
-            array_F[i,:,:] = smplr.estimate_[smplr.queried_oracle_]
+            array_F[i,:,:] = smplr.estimate_[smplr.queried_oracle_].reshape(-1,n_class)
         else:
-            array_F[i,:,:] = smplr.estimate_
+            array_F[i,:,:] = smplr.estimate_.reshape(-1,n_class)
         array_s[i] = smplr.t_
         array_t[i] = tf - ti
     f.close()
 
     logging.info("Completed all experiments")
 
-def process_expt(h5_path, inmemory = True, ignorenan = False):
+def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
     """
     Assumes h5 file has table called `F_measure`
 
@@ -95,6 +95,7 @@ def process_expt(h5_path, inmemory = True, ignorenan = False):
     F_mean = np.empty([n_labels, n_class], dtype='float')
     F_var = np.empty([n_labels, n_class], dtype='float')
     F_stderr = np.empty([n_labels, n_class], dtype='float')
+    F_abserr = np.empty([n_labels, n_class], dtype='float')
     n_sample = np.empty(n_labels, dtype='int')
     if inmemory:
         F_mem = F[:,:,:]
@@ -116,11 +117,15 @@ def process_expt(h5_path, inmemory = True, ignorenan = False):
                 F_mean[t] = np.nanmean(temp, axis=0)
                 F_var[t] = np.nanvar(temp, axis=0)
                 F_stderr[t] = np.sqrt(F_var[t]/n_sample[t])
+                if F_gt:
+                    F_abserr[t] = np.nanmean(np.abs(temp-F_gt), axis=0)
         else:
             n_sample[t] = len(temp)
             F_mean[t] = np.mean(temp, axis=0)
             F_var[t] = np.var(temp, axis=0)
             F_stderr[t] = np.sqrt(F_var[t]/n_sample[t])
+            if F_gt:
+                F_abserr[t] = np.mean(np.abs(temp-F_gt), axis=0)
 
     logging.info("Processing complete".format())
 
@@ -135,7 +140,8 @@ def process_expt(h5_path, inmemory = True, ignorenan = False):
             'mean_CPU_time': mean_CPU_time,
             'var_CPU_time': var_CPU_time,
             'mean_n_iterations': mean_n_iterations,
-            'h5_path': h5_path}
+            'h5_path': h5_path,
+            'abs_err': F_abserr}
 
 class DataError(Exception):
     def __init__(self, msg):
@@ -158,12 +164,12 @@ class Data:
         self.FP = None
         self.TN = None
         self.FN = None
-        self.F1_measure = None
+        self.F_measure = None
         self.precision = None
         self.recall = None
 
     def read_h5(self, h5_path, load_features=False):
-
+        print("Loading %s" % h5_path)
         h5_file = tables.open_file(h5_path, mode = 'r')
 
         if load_features and hasattr(h5_file.root, "features"):
@@ -172,17 +178,32 @@ class Data:
         if hasattr(h5_file.root, "labels"):
             self.labels = h5_file.root.labels[:]
             self.num_items = len(self.labels)
-        if hasattr(h5_file.root, "scores"):
-            self.scores = h5_file.root.scores[:]
-            self.num_items = len(self.scores)
         if hasattr(h5_file.root, "probs"):
             self.probs = h5_file.root.probs[:]
             self.num_items = len(self.probs)
+        if hasattr(h5_file.root, "scores"):
+            self.scores = h5_file.root.scores[:]
+            self.num_items = len(self.scores)
         if hasattr(h5_file.root, "preds"):
             self.preds = h5_file.root.preds[:]
             self.num_items = len(self.preds)
 
         h5_file.close()
+        from scipy.special import expit,logit
+        if h5_path.lower().find('svm') != -1:
+            # Remove calibrated probabilities from SVM which were expensive to compute
+            self.probs = None
+        if self.probs is None and self.scores is None:
+            raise RuntimeError('probs and scores both missing')
+        if self.probs is None:
+            warnings.warn('converting scores into probabilities', UserWarning)
+            self.probs = expit(self.scores)
+        if self.scores is None:
+            warnings.warn('converting probabilities into scores', UserWarning)
+            self.scores = logit(self.probs)
+        if self.preds is None:
+            warnings.warn('making predictions from scores using default threshold of zero', UserWarning)
+            self.preds = (self.scores >= 0) * 1
 
     def scores_to_preds(self, threshold, use_probs = True):
         """
@@ -239,7 +260,7 @@ class Data:
             print("\n")
 
 
-    def calc_true_performance(self, printout = False):
+    def calc_true_performance(self, alpha = 0.5, printout = False):
         """
         Evaluate precision, recall and balanced F-measure
         """
@@ -260,12 +281,12 @@ class Data:
             self.recall = self.TP / (self.TP + self.FN)
 
         if self.precision + self.recall == 0:
-            self.F1_measure = np.nan
+            self.F_measure = np.nan
         else:
-            self.F1_measure = ( 2 * self.precision * self.recall /
-                                 (self.precision + self.recall) )
+            self.F_measure = (self.precision * self.recall /
+                              (alpha * self.recall + (1-alpha) * self.precision))
 
         if printout:
             print("True performance is:")
             print("--------------------")
-            print("Precision: {} \t Recall: {} \t F1 measure: {}".format(self.precision, self.recall, self.F1_measure))
+            print("Precision: {} \t Recall: {} \t F measure: {}".format(self.precision, self.recall, self.F_measure))
