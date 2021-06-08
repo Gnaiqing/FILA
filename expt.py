@@ -174,11 +174,11 @@ if __name__ == "__main__":
             continue
         if hp.exp_type == "single":
             single_run(dataset_name, dataset_path,
-                       name_list = ["OASIS", "SS-prop", "SS-neyman", "SS-opt"],
+                       name_list = ["OASIS", "SS-opt", "SS-opt-ucb", "SS-opt-thompson"],
                        exp_tag = hp.exp_tag)
         else:
             multiple_run(dataset_name,dataset_path,n_expts=hp.n_expts,
-                         name_list=["SS-neyman", "SS-neyman-oracle", "SS-opt", "SS-opt-oracle"],
+                         name_list=["OASIS", "SS-opt", "SS-opt-ucb", "SS-opt-thompson"],
                          restore=hp.restore,
                          exp_tag = hp.exp_tag)
 

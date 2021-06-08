@@ -130,6 +130,22 @@ class BetaBernoulliModel:
         if self.store_variance:
             self._calc_var_theta()
 
+    def get_beta_parameter(self):
+        if self.decaying_prior:
+            n_sampled = np.clip(self.alpha_ + self.beta_, 1, np.inf)
+            prior_weight = 1/n_sampled
+            alpha = self.alpha_ + prior_weight * self.alpha_0
+            beta = self.beta_ + prior_weight * self.beta_0
+        else:
+            alpha = self.alpha_ + self.alpha_0
+            beta = self.beta_ + self.beta_0
+        return alpha, beta
+
+    def get_counts(self):
+        alpha_ = copy.deepcopy(self.alpha_)
+        beta_ = copy.deepcopy(self.beta_)
+        return alpha_, beta_
+
     def calc_strata_var(self, include_prior=False):
         """
         Calculate the empirical variance of each strata

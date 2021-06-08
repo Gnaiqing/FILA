@@ -18,7 +18,8 @@
     },
     "sample_config": {
       "sample_strategy": "neyman",
-      "oracle": true
+      "oracle": true,
+      "early_stop" : true
     }
   },
   {
@@ -36,7 +37,8 @@
     },
     "sample_config": {
       "sample_strategy": "opt",
-      "oracle": true
+      "oracle": true,
+      "early_stop": true
     }
   },
   {
@@ -44,6 +46,23 @@
     "smplr": "SS",
     "sample_config": {
       "sample_strategy": "opt"
+    }
+  },
+  {
+    "name": "SS-opt-ucb",
+    "smplr": "SS",
+    "smplr_config": {
+      "prior_strength": 0
+    },
+    "sample_config": {
+      "sample_strategy": "opt-ucb"
+    }
+  },
+  {
+    "name": "SS-opt-thompson",
+    "smplr": "SS",
+    "sample_config": {
+      "sample_strategy": "opt-thompson"
     }
   }
 ]

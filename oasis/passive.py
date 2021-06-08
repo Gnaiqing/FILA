@@ -192,6 +192,9 @@ class PassiveSampler:
         n_remaining = self._max_iter - self.t_
 
         if n_remaining == 0:
+            if "early_stop" in kwargs:
+                print("No more space available to continue sampling.Early stop.")
+                return 0
             if (not self.replace) and (self._n_items == self._max_iter):
                 raise Exception("All items have already been sampled")
             else:
@@ -207,6 +210,8 @@ class PassiveSampler:
 
         for _ in range(n_to_sample):
             self._iterate(**kwargs)
+
+        return 1
 
     def sample_distinct(self, n_to_sample, **kwargs):
         """Sample a sequence of items from the pool until a minimum number of
@@ -233,7 +238,9 @@ class PassiveSampler:
 
         n_sampled = 0 # number of distinct items sampled this round
         while n_sampled < n_to_sample:
-            self.sample(1,**kwargs)
+            success = self.sample(1,**kwargs)
+            if not success:
+                break
             n_sampled += self._queried_oracle[self.t_ - 1]*1
 
     def _sample_item(self, **kwargs):
