@@ -1,13 +1,27 @@
 [
   {
+    "name": "Proportional",
+    "smplr": "SS",
+    "sample_config": {
+      "sample_strategy" : "prop"
+    }
+  },
+  {
     "name" : "OASIS",
     "smplr" : "OASIS"
   },
   {
-    "name": "SS-prop",
+    "name": "Neyman-thompson",
     "smplr": "SS",
     "sample_config": {
-      "sample_strategy" : "prop"
+      "sample_strategy": "neyman-thompson"
+    }
+  },
+  {
+    "name": "FILA-thompson",
+    "smplr": "SS",
+    "sample_config": {
+      "sample_strategy": "FILA-thompson"
     }
   },
   {
@@ -23,13 +37,6 @@
     }
   },
   {
-    "name": "SS-neyman",
-    "smplr": "SS",
-    "sample_config": {
-      "sample_strategy": "neyman"
-    }
-  },
-  {
     "name": "SS-opt-oracle",
     "smplr": "SS",
     "smplr_config": {
@@ -39,30 +46,6 @@
       "sample_strategy": "opt",
       "oracle": true,
       "early_stop": true
-    }
-  },
-  {
-    "name": "SS-opt",
-    "smplr": "SS",
-    "sample_config": {
-      "sample_strategy": "opt"
-    }
-  },
-  {
-    "name": "SS-opt-ucb",
-    "smplr": "SS",
-    "smplr_config": {
-      "prior_strength": 0
-    },
-    "sample_config": {
-      "sample_strategy": "opt-ucb"
-    }
-  },
-  {
-    "name": "SS-opt-thompson",
-    "smplr": "SS",
-    "sample_config": {
-      "sample_strategy": "opt-thompson"
     }
   }
 ]

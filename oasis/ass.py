@@ -28,6 +28,8 @@ class StratifiedSampler(PassiveSampler):
         self.record_inst_hist = verify_boolean(record_inst_hist)
         self.decaying_prior = verify_boolean(decaying_prior)
 
+        # store the estimated variance for estimator
+        self._estimate_std = np.tile(np.nan, [self._max_iter, self._n_class])
         # Need to transform scores to the [0,1] interval (to use as proxy for
         # probabilities)
         self._probs = scores_to_probs(self.scores, self.proba)
@@ -35,6 +37,7 @@ class StratifiedSampler(PassiveSampler):
         # Average the probabilities over opt_class
         self._probs_avg_opt_class = np.mean(self._probs[:,self.opt_class], \
                                             axis=1, keepdims=True)
+
 
         # Generate strata if not given
         if self.strata is None:
@@ -72,7 +75,6 @@ class StratifiedSampler(PassiveSampler):
         # gamma = np.zeros((2,self.strata.n_strata_))
         self._BB_model = BetaBernoulliModel(gamma[0], gamma[1],
                                             decaying_prior=self.decaying_prior)
-
         # ground truth labels for oracle test purpose
         if "labels" in kwargs:
             self.labels = kwargs["labels"]
@@ -89,71 +91,29 @@ class StratifiedSampler(PassiveSampler):
             self.partial_weight[self.pos_strata_idx] = np.abs(partial_tp)/(np.abs(partial_tp)+np.abs(partial_fn))
             self.partial_weight[self.neg_strata_idx] = np.abs(partial_fn)/(np.abs(partial_tp)+np.abs(partial_fn))
 
-    def _calc_var_F_guess(self, tp_est, tp_var, fn_est, fn_var):
-        """
-        Estimate the variance of F-score estimator based on delta method
-        F = tp / (p*alpha + (tp+fn)*(1-alpha))
-        :param alpha: alpha for F score
-        :param tp_est: estimation of TP
-        :param fn_est: estimation of FN
-        :param p: TP+FP (known constant)
-        :return: var_F: estimated variance of F-score
-        """
-        p = self.P
-        alpha = self.alpha
-        partial_tp = (p*alpha + (1-alpha)*fn_est)/(p*alpha+(tp_est+fn_est)*(1-alpha))**2
-        partial_fn = -(1-alpha)*tp_est/(p*alpha+(tp_est+fn_est)*(1-alpha))**2
-        var_F = tp_var*partial_tp**2 + fn_var * partial_fn**2
-        return var_F
+    @property
+    def estimate_std(self):
+        if self.t_ == 0:
+            return None
+        if self._multiple_class:
+            return self._estimate_std[0:self.t_,:]
+        else:
+            return self._estimate_std[0:self.t_,:].ravel()
+    @estimate_std.setter
+    def estimate_std(self, value):
+        raise AttributeError("can't set attribute.")
+    @estimate_std.deleter
+    def estimate_std(self):
+        raise AttributeError("can't delete attribute.")
 
 
-    def select_stratum(self, sample_strategy="opt", **kwargs):
+    def select_stratum(self, sample_strategy="FILA-thompson", **kwargs):
         """
         Pick the next stratum to sample from according to sample_strategy
         :param sample_strategy: "ass"
         :return: stratum_idx: index of stratum selected
         """
-        if sample_strategy == "opt":
-            assert len(self.mix_strata_idx) == 0
-            # the prior information are treated as "pseudo-counts" here
-            a,b = self._BB_model.get_beta_parameter()
-            emp_strata_var = (a*b)/((a+b-1)*(a+b))
-            emp_strata_std = np.sqrt(emp_strata_var)
-            mu_hat = a / (a + b)
-            tp_est = (mu_hat*self.strata.sizes_)[self.pos_strata_idx].sum()
-            fn_est = (mu_hat*self.strata.sizes_)[self.neg_strata_idx].sum()
-            partial_tp = self.P*self.alpha + (1-self.alpha)*fn_est
-            partial_fn = (1-self.alpha)*tp_est
-            opt_strata_weight = emp_strata_std * self.strata.sizes_
-            opt_strata_weight[self.pos_strata_idx] = opt_strata_weight[self.pos_strata_idx]*partial_tp
-            opt_strata_weight[self.neg_strata_idx] = opt_strata_weight[self.neg_strata_idx]*partial_fn
-            # select the current strata based on greedy search
-            weight = opt_strata_weight / self.strata._n_sampled
-            stratum_idx = np.argmax(weight)
-
-        elif sample_strategy == "opt-ucb":
-            assert len(self.mix_strata_idx) == 0
-            a,b = self._BB_model.get_counts()
-            emp_strata_var = (a*b)/((a+b-1)*(a+b))
-            if "ucb_delta" in kwargs:
-                delta = kwargs["ucb_delta"]
-            else:
-                delta = 1e-8
-            ratio = 3* np.sqrt(np.log(1/delta)/(2*self.strata._n_sampled))
-            ucb = emp_strata_var + ratio
-            # we only use empirical information for ucb method
-            mu_hat = a / (a + b)
-            tp_est = (mu_hat * self.strata.sizes_)[self.pos_strata_idx].sum()
-            fn_est = (mu_hat*self.strata.sizes_)[self.neg_strata_idx].sum()
-            partial_tp = self.P*self.alpha + (1-self.alpha)*fn_est
-            partial_fn = (1-self.alpha)*tp_est
-            opt_strata_weight = np.sqrt(ucb) * self.strata.sizes_
-            opt_strata_weight[self.pos_strata_idx] = opt_strata_weight[self.pos_strata_idx]*partial_tp
-            opt_strata_weight[self.neg_strata_idx] = opt_strata_weight[self.neg_strata_idx]*partial_fn
-            weight = opt_strata_weight / self.strata._n_sampled
-            stratum_idx = np.argmax(weight)
-
-        elif sample_strategy == "opt-thompson":
+        if sample_strategy == "FILA-thompson":
             assert len(self.mix_strata_idx) == 0
             a,b = self._BB_model.get_beta_parameter()
             mu_hat = np.random.beta(a,b)
@@ -163,6 +123,12 @@ class StratifiedSampler(PassiveSampler):
             fn_est = (mu_hat*self.strata.sizes_)[self.neg_strata_idx].sum()
             partial_tp = self.P*self.alpha + (1-self.alpha)*fn_est
             partial_fn = (1-self.alpha)*tp_est
+            # check if each strata is fully sampled already
+            # strata_empty = np.ones(self.strata.n_strata_)
+            # for stratum_idx in np.arange(self.strata.n_strata_):
+            #     if np.all(self.strata._sampled[stratum_idx]):
+            #         strata_empty[stratum_idx] = 0
+            # opt_strata_weight = emp_strata_std * self.strata.sizes_ * strata_empty
             opt_strata_weight = emp_strata_std * self.strata.sizes_
             opt_strata_weight[self.pos_strata_idx] = opt_strata_weight[self.pos_strata_idx]*partial_tp
             opt_strata_weight[self.neg_strata_idx] = opt_strata_weight[self.neg_strata_idx]*partial_fn
@@ -172,11 +138,17 @@ class StratifiedSampler(PassiveSampler):
         elif sample_strategy == "prop":
             stratum_idx = self.strata._sample_stratum(pmf=self.strata.weights_)
 
-        elif sample_strategy == "neyman":
+        elif sample_strategy == "neyman-thompson":
             a,b = self._BB_model.get_beta_parameter()
-            emp_strata_var = (a*b)/((a+b-1)*(a+b))
+            mu_hat = np.random.beta(a,b)
+            emp_strata_var = mu_hat * (1-mu_hat)
             emp_strata_std = np.sqrt(emp_strata_var)
-            opt_strata_weight = emp_strata_std*self.strata.sizes_
+            # strata_empty = np.ones(self.strata.n_strata_)
+            # for stratum_idx in np.arange(self.strata.n_strata_):
+            #     if np.all(self.strata._sampled[stratum_idx]):
+            #         strata_empty[stratum_idx] = 0
+            # opt_strata_weight = emp_strata_std * self.strata.sizes_*strata_empty
+            opt_strata_weight = emp_strata_std * self.strata.sizes_
             weight = opt_strata_weight / self.strata._n_sampled
             stratum_idx = np.argmax(weight)
 
@@ -188,9 +160,6 @@ class StratifiedSampler(PassiveSampler):
     def _sample_item(self, **kwargs):
         """Sample an item from the pool
         """
-        if 'oracle' in kwargs and kwargs['oracle']:
-            return self._sample_item_oracle(**kwargs)
-
         if 'fixed_stratum' in kwargs:
             stratum_idx = kwargs['fixed_stratum']
         else:
@@ -206,59 +175,30 @@ class StratifiedSampler(PassiveSampler):
         return loc, 1, {'stratum': stratum_idx}
 
 
-    def _sample_item_oracle(self, **kwargs):
-        """
-        Sample an item based on oracle (var and mean of each strata known in advance)
-        :param kwargs:
-        :return:
-        """
-        if 'fixed_stratum' in kwargs:
-            stratum_idx = kwargs['fixed_stratum']
-        else:
-            if np.min(self.strata._n_sampled) < 2:
-                stratum_idx = np.argmin(self.strata._n_sampled)
-                loc = self.strata._sample_in_stratum(stratum_idx,
-                                                     replace=self.replace)
-                return loc, 1, {'stratum': stratum_idx}
-
-            if 'sample_strategy' in kwargs:
-                sample_strategy = kwargs["sample_strategy"]
-            else:
-                sample_strategy = "opt"
-
-            if sample_strategy == "prop":
-                sample_weight = self.strata.sizes_
-            elif sample_strategy == "neyman":
-                sample_weight = self.strata.sizes_ * np.sqrt(self.strata_var)
-            elif sample_strategy == "opt":
-                sample_weight = self.strata.sizes_ * np.sqrt(self.strata_var) * self.partial_weight
-            else:
-                raise Exception("sample strategy %s not implemented." % sample_strategy)
-
-            sample_weight = sample_weight / np.sum(sample_weight)
-            loc, stratum_idx = self.strata.sample(pmf = sample_weight,
-                                                  replace=self.replace)
-
-            return loc, 1, {'stratum': stratum_idx}
-
     def _update_estimate_and_sampler(self, ell, ell_hat, weight, extra_info,
                                      **kwargs):
         # updating the BB model
         self._BB_model.update(ell, extra_info['stratum'])
-        # update current estimation
-        if "sample_strategy" in kwargs and kwargs["sample_strategy"] in ["opt-ucb"]:
-            # frequentist methods: no prior information
-            a,b = self._BB_model.get_counts()
-            self._TP = (a/(a+b)*self.strata.sizes_)[self.pos_strata_idx].sum()
-            self._FN = (a/(a+b)*self.strata.sizes_)[self.neg_strata_idx].sum()
-            self._FP = self.P - self._TP
-        else:
-            # bayesian methods: use prior information
-            self._TP = (self._BB_model.theta_*self.strata.sizes_)[self.pos_strata_idx].sum()
-            self._FN = (self._BB_model.theta_*self.strata.sizes_)[self.neg_strata_idx].sum()
-            self._FP = self.P - self._TP
+        #  no prior information
+        a,b = self._BB_model.get_counts()
+        self._TP = (a/(a+b)*self.strata.sizes_)[self.pos_strata_idx].sum()
+        self._FN = (a/(a+b)*self.strata.sizes_)[self.neg_strata_idx].sum()
+        self._FP = self.P - self._TP
+        # bayesian methods: use prior information
+        # self._TP = (self._BB_model.theta_*self.strata.sizes_)[self.pos_strata_idx].sum()
+        # self._FN = (self._BB_model.theta_*self.strata.sizes_)[self.neg_strata_idx].sum()
+        # self._FP = self.P - self._TP
         self._estimate[self.t_] = \
             self._F_measure(self.alpha, self._TP, self._FP, self._FN)
+
+        strata_var = self._BB_model.theta_ * (1-self._BB_model.theta_)
+        partial_tp = (self.P *self.alpha + (1-self.alpha)*self._FN)/(self.P*self.alpha+(self._TP+self._FN)*(1-self.alpha))**2
+        partial_fn = (1-self.alpha)*self._TP/(self.P*self.alpha+(self._TP+self._FN)*(1-self.alpha))**2
+        var_p = ((self.strata.sizes_*partial_tp)**2*strata_var / self.strata._n_sampled)[self.pos_strata_idx].sum()
+        var_n = ((self.strata.sizes_*partial_fn)**2*strata_var / self.strata._n_sampled)[self.neg_strata_idx].sum()
+        est_std = np.sqrt(var_p + var_n)
+        self._estimate_std[self.t_] = est_std
+
 
     def _calc_BB_prior(self, theta_0):
         """Generate a prior for the BB model

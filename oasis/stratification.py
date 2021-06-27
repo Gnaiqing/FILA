@@ -86,10 +86,14 @@ def stratify_by_scores(scores, goal_n_strata='auto', method='cum_sqrt_F',
             pos_allocation = stratify_by_scores(pos_scores,goal_n_strata="auto",method=method)
             pos_allocation += neg_n_strata
         else:
-            neg_allocation = stratify_by_scores(neg_scores,goal_n_strata="auto",method=method)
+            pos_size = len(pos_scores)
+            neg_size = len(neg_scores)
+            goal_pos_strata = np.ceil(goal_n_strata * pos_size / (pos_size + neg_size)).astype(int)
+            pos_allocation = stratify_by_scores(pos_scores, goal_n_strata=goal_pos_strata,method=method)
+            pos_n_strata = len(np.unique(pos_allocation))
+            goal_neg_strata = max(1, goal_n_strata - pos_n_strata)
+            neg_allocation = stratify_by_scores(neg_scores,goal_n_strata=goal_neg_strata,method=method)
             neg_n_strata = len(np.unique(neg_allocation))
-            goal_pos_strata = max(1, goal_n_strata - neg_n_strata)
-            pos_allocation = stratify_by_scores(neg_scores, goal_n_strata=goal_pos_strata,method=method)
             pos_allocation += neg_n_strata
 
         allocation = np.zeros(len(scores))

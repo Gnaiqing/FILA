@@ -3,6 +3,7 @@ import tables
 import time
 import logging
 import warnings
+import pandas as pd
 
 def repeat_expt(smplr, n_expts, n_labels, output_file = None, **kwargs):
     """
@@ -37,6 +38,7 @@ def repeat_expt(smplr, n_expts, n_labels, output_file = None, **kwargs):
     int_atom = tables.Int64Atom()
 
     array_F = f.create_carray(f.root, 'F_measure', float_atom, (n_expts, n_labels, n_class))
+    array_std = f.create_carray(f.root,'F_std', float_atom, (n_expts, n_labels, n_class))
     array_s = f.create_carray(f.root, 'n_iterations', int_atom, (n_expts, 1))
     array_t = f.create_carray(f.root, 'CPU_time', float_atom, (n_expts, 1))
 
@@ -50,13 +52,18 @@ def repeat_expt(smplr, n_expts, n_labels, output_file = None, **kwargs):
         tf = time.process_time()
         if hasattr(smplr, 'queried_oracle_'):
             array_F[i,:,:] = smplr.estimate_[smplr.queried_oracle_].reshape(-1,n_class)
+            if hasattr(smplr, 'estimate_std'):
+                array_std[i,:,:] = smplr.estimate_std[smplr.queried_oracle_].reshape(-1,n_class)
         else:
             array_F[i,:,:] = smplr.estimate_.reshape(-1,n_class)
+            if hasattr(smplr, 'estimate_std'):
+                array_std[i,:,:] = smplr.estimate_std.reshape(-1,n_class)
         array_s[i] = smplr.t_
         array_t[i] = tf - ti
     f.close()
 
     logging.info("Completed all experiments")
+
 
 def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
     """
@@ -79,6 +86,7 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
     h5_file = tables.open_file(h5_path, mode = 'r')
 
     F = h5_file.root.F_measure
+    # F_std = h5_file.root.F_std
 
     n_expt, n_labels, n_class = F.shape
     mean_n_iterations = np.sum(h5_file.root.n_iterations)/n_expt
@@ -97,8 +105,13 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
     F_stderr = np.empty([n_labels, n_class], dtype='float')
     F_abserr = np.empty([n_labels, n_class], dtype='float')
     n_sample = np.empty(n_labels, dtype='int')
+    # store the accuracy and length of confidence interval
+    I_mean_length = np.empty([n_labels, n_class], dtype='float')
+    I_accuracy = np.empty([n_labels, n_class], dtype='float')
+
     if inmemory:
         F_mem = F[:,:,:]
+        # F_mem_std = F_std[:,:,:]
 
     logging.info("Beginning processing".format())
     for t in range(n_labels):
@@ -107,8 +120,10 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
             logging.info("Processed {} of {} experiments".format(t, n_labels))
         if inmemory:
             temp = F_mem[:,t,:]
+            # temp_std = F_mem_std[:,t,:]
         else:
             temp = F[:,t,:]
+            # temp_std = F_std[:,t,:]
         if ignorenan:
             n_sample[t] = np.sum(~np.isnan(temp))
             # Expect to see RuntimeWarnings if array contains all NaNs
@@ -117,15 +132,29 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
                 F_mean[t] = np.nanmean(temp, axis=0)
                 F_var[t] = np.nanvar(temp, axis=0)
                 F_stderr[t] = np.sqrt(F_var[t]/n_sample[t])
+                # I_mean_length[t] = min(1, np.nanmean(temp_std, axis=0) * 1.96 * 2)
                 if F_gt:
                     F_abserr[t] = np.nanmean(np.abs(temp-F_gt), axis=0)
+                    # compute accuracy of confidence interval
+                    # lb = temp - 1.96*temp_std
+                    # ub = temp + 1.96*temp_std
+                    # I_accuracy[t] = np.nanmean((lb<=F_gt)& (F_gt<=ub), axis=0)
+
+
         else:
             n_sample[t] = len(temp)
             F_mean[t] = np.mean(temp, axis=0)
             F_var[t] = np.var(temp, axis=0)
             F_stderr[t] = np.sqrt(F_var[t]/n_sample[t])
+            # I_mean_length[t] = min(1, np.mean(temp_std, axis=0) * 1.96 * 2)
             if F_gt:
                 F_abserr[t] = np.mean(np.abs(temp-F_gt), axis=0)
+                # compute accuracy of confidence interval
+                # lb = temp - 1.96*temp_std
+                # lb = np.nan_to_num(lb, nan=0)
+                # ub = temp + 1.96*temp_std
+                # ub = np.nan_to_num(ub, nan=1)
+                # I_accuracy[t] = np.mean((lb<=F_gt)& (F_gt<=ub), axis=0)
 
     logging.info("Processing complete".format())
 
@@ -141,7 +170,11 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
             'var_CPU_time': var_CPU_time,
             'mean_n_iterations': mean_n_iterations,
             'h5_path': h5_path,
-            'abs_err': F_abserr}
+            'abs_err': F_abserr
+            # 'interval_length': I_mean_length,
+            # 'interval_accuracy': I_accuracy
+            }
+
 
 class DataError(Exception):
     def __init__(self, msg):
@@ -167,6 +200,33 @@ class Data:
         self.F_measure = None
         self.precision = None
         self.recall = None
+        self.ratio_factor = None
+
+    def read_csv(self, csv_path):
+        print("Loading %s" % csv_path)
+        df = pd.read_csv(csv_path)
+        columns = df.columns
+        if "labels" in columns:
+            self.labels = df["labels"].to_numpy()
+        if "probs" in columns:
+            self.probs = df["probs"].to_numpy()
+        if "scores" in columns:
+            self.scores = df["scores"].to_numpy()
+        if "preds" in columns:
+            self.preds = df["preds"].to_numpy()
+
+        from scipy.special import expit,logit
+        if self.probs is None and self.scores is None:
+            raise RuntimeError('probs and scores both missing')
+        if self.probs is None:
+            warnings.warn('converting scores into probabilities', UserWarning)
+            self.probs = expit(self.scores)
+        if self.scores is None:
+            warnings.warn('converting probabilities into scores', UserWarning)
+            self.scores = logit(self.probs)
+        if self.preds is None:
+            warnings.warn('making predictions from scores using default threshold of zero', UserWarning)
+            self.preds = (self.scores >= 0) * 1
 
     def read_h5(self, h5_path, load_features=False):
         print("Loading %s" % h5_path)
@@ -289,4 +349,10 @@ class Data:
         if printout:
             print("True performance is:")
             print("--------------------")
+            size = self.TP+self.FP+self.FN + self.TN
+            pos  = self.TP+self.FP
+            print("Size: {} Pos: {} Imb: {:.2f}".format(size, pos, (size-pos)/pos))
+            print("TP: {}\t FP: {}\t FN: {}\t TN: {}".format(self.TP, self.FP, self.FN, self.TN) )
             print("Precision: {} \t Recall: {} \t F measure: {}".format(self.precision, self.recall, self.F_measure))
+            self.ratio_factor = (alpha*(self.TP+self.FP)+(1-alpha)*(self.FN))/((1-alpha)*(self.TP))
+            print("Ratio: {}".format(self.ratio_factor))

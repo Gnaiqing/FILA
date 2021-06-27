@@ -1,30 +1,74 @@
 [
   {
     "name": "amazon-google",
-    "path": "datasets/amazon-googleproducts-svm.h5"
+    "path": "datasets/origin/amazon-googleproducts-svm.h5",
+    "n_labels": 3000
   },
   {
     "name": "abt-buy",
-    "path": "datasets/abt-buy-svm.h5"
+    "path": "datasets/origin/abt-buy-svm.h5",
+    "n_labels": 3000
   },
   {
-    "name": "dblp-acm-small",
-    "path": "datasets/dblp-acm-svm-small.h5"
+    "name": "dblp-acm",
+    "path": "datasets/origin/dblp-acm-svm-small.h5",
+    "n_labels": 3000
   },
   {
     "name": "restaurant",
-    "path": "datasets/restaurant-svm.h5"
+    "path": "datasets/origin/restaurant-svm.h5",
+    "n_labels": 3000
   },
   {
     "name": "creditcard",
-    "path": "datasets/creditcard-lr.h5"
+    "path": "datasets/origin/creditcard-lr.h5"
   },
   {
     "name": "safedriver",
-    "path": "datasets/safedriver-xgb.h5"
+    "path": "datasets/origin/safedriver-xgb.h5"
   },
   {
     "name": "tweets100k",
-    "path": "datasets/tweets100k-svm.h5"
+    "path": "datasets/origin/tweets100k-svm.h5"
+  },
+  {
+    "name": "amazon-google-blocked",
+    "path": "datasets/output/structured_Amazon-Google_hybrid/test.csv",
+    "n_labels": 500
+  },
+  {
+    "name": "dblp-acm-blocked",
+    "path": "datasets/output/structured_DBLP-ACM_hybrid/test.csv",
+    "n_labels": 500
+  },
+  {
+    "name": "dblp-google-blocked",
+    "path": "datasets/output/structured_DBLP-GoogleScholar_hybrid/test.csv",
+    "n_labels": 500
+  },
+  {
+    "name": "walmart-amazon-blocked",
+    "path": "datasets/output/structured_Walmart-Amazon_hybrid/test.csv",
+    "n_labels": 500
+  },
+  {
+    "name": "dblp-acm-dirty",
+    "path": "datasets/output/structured_DBLP-ACM_hybrid/test_dirty.csv",
+    "n_labels": 500
+  },
+  {
+    "name": "dblp-google-dirty",
+    "path": "datasets/output/structured_DBLP-GoogleScholar_hybrid/test_dirty.csv",
+    "n_labels": 500
+  },
+  {
+    "name": "itunes-amazon-dirty",
+    "path": "datasets/output/structured_iTunes-Amazon_hybrid/test_dirty.csv",
+    "n_labels": 50
+  },
+  {
+    "name": "walmart-amazon-dirty",
+    "path": "datasets/output/structured_Walmart-Amazon_hybrid/test_dirty.csv",
+    "n_labels": 500
   }
 ]
