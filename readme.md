@@ -27,7 +27,7 @@ exp_config.json: contains the configuration for adaptive samplers used for exper
 
   (We additionally printout confidence interval for FILA-Thompson here)
 
-  <img src="amazon-google_α=0.5.png" alt="amazon-google_α=0.5" style="zoom:67%;" />
+  <img src="amazon-google_0.5.png" alt="amazon-google_α=0.5" style="zoom:67%;" />
 
 * Collecting statistics of the estimators:
 
@@ -37,4 +37,4 @@ exp_config.json: contains the configuration for adaptive samplers used for exper
 
   Example output:
 
-  <img src="amazon-google_α=0.5_stats.png" alt="amazon-google_α=0.5_stats" style="zoom:72%;" />
+  <img src="amazon-google_0.5_stats.png" alt="amazon-google_α=0.5_stats" style="zoom:72%;" />
