@@ -86,7 +86,7 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
     h5_file = tables.open_file(h5_path, mode = 'r')
 
     F = h5_file.root.F_measure
-    # F_std = h5_file.root.F_std
+    F_std = h5_file.root.F_std
 
     n_expt, n_labels, n_class = F.shape
     mean_n_iterations = np.sum(h5_file.root.n_iterations)/n_expt
@@ -111,7 +111,7 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
 
     if inmemory:
         F_mem = F[:,:,:]
-        # F_mem_std = F_std[:,:,:]
+        F_mem_std = F_std[:,:,:]
 
     logging.info("Beginning processing".format())
     for t in range(n_labels):
@@ -120,10 +120,10 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
             logging.info("Processed {} of {} experiments".format(t, n_labels))
         if inmemory:
             temp = F_mem[:,t,:]
-            # temp_std = F_mem_std[:,t,:]
+            temp_std = F_mem_std[:,t,:]
         else:
             temp = F[:,t,:]
-            # temp_std = F_std[:,t,:]
+            temp_std = F_std[:,t,:]
         if ignorenan:
             n_sample[t] = np.sum(~np.isnan(temp))
             # Expect to see RuntimeWarnings if array contains all NaNs
@@ -132,13 +132,13 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
                 F_mean[t] = np.nanmean(temp, axis=0)
                 F_var[t] = np.nanvar(temp, axis=0)
                 F_stderr[t] = np.sqrt(F_var[t]/n_sample[t])
-                # I_mean_length[t] = min(1, np.nanmean(temp_std, axis=0) * 1.96 * 2)
+                I_mean_length[t] = min(1, np.nanmean(temp_std, axis=0) * 1.96 * 2)
                 if F_gt:
                     F_abserr[t] = np.nanmean(np.abs(temp-F_gt), axis=0)
                     # compute accuracy of confidence interval
-                    # lb = temp - 1.96*temp_std
-                    # ub = temp + 1.96*temp_std
-                    # I_accuracy[t] = np.nanmean((lb<=F_gt)& (F_gt<=ub), axis=0)
+                    lb = temp - 1.96*temp_std
+                    ub = temp + 1.96*temp_std
+                    I_accuracy[t] = np.nanmean((lb<=F_gt)& (F_gt<=ub), axis=0)
 
 
         else:
@@ -146,15 +146,15 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
             F_mean[t] = np.mean(temp, axis=0)
             F_var[t] = np.var(temp, axis=0)
             F_stderr[t] = np.sqrt(F_var[t]/n_sample[t])
-            # I_mean_length[t] = min(1, np.mean(temp_std, axis=0) * 1.96 * 2)
+            I_mean_length[t] = min(1, np.mean(temp_std, axis=0) * 1.96 * 2)
             if F_gt:
                 F_abserr[t] = np.mean(np.abs(temp-F_gt), axis=0)
                 # compute accuracy of confidence interval
-                # lb = temp - 1.96*temp_std
-                # lb = np.nan_to_num(lb, nan=0)
-                # ub = temp + 1.96*temp_std
-                # ub = np.nan_to_num(ub, nan=1)
-                # I_accuracy[t] = np.mean((lb<=F_gt)& (F_gt<=ub), axis=0)
+                lb = temp - 1.96*temp_std
+                lb = np.nan_to_num(lb, nan=0)
+                ub = temp + 1.96*temp_std
+                ub = np.nan_to_num(ub, nan=1)
+                I_accuracy[t] = np.mean((lb<=F_gt)& (F_gt<=ub), axis=0)
 
     logging.info("Processing complete".format())
 
@@ -170,9 +170,9 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
             'var_CPU_time': var_CPU_time,
             'mean_n_iterations': mean_n_iterations,
             'h5_path': h5_path,
-            'abs_err': F_abserr
-            # 'interval_length': I_mean_length,
-            # 'interval_accuracy': I_accuracy
+            'abs_err': F_abserr,
+            'interval_length': I_mean_length,
+            'interval_accuracy': I_accuracy
             }
 
 

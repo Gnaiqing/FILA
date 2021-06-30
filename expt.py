@@ -43,7 +43,7 @@ def plt_expt(result_list, title, dataset_name):
         plt.yticks(fontsize=fontsize)
     plt.ylabel("abs_err",fontsize=fontsize)
     plt.title(title,fontsize=fontsize)
-    # plt.legend()
+    plt.legend()
 
     plt.subplot(212)
     for result in result_list:
@@ -206,9 +206,9 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
             print("Evaluating ", result["name"])
             print("Abs. Err:", result["abs_err"].reshape(-1)[-1])
             print("Std. Dev:", result["variance"].reshape(-1)[-1])
-            # if hasattr(smplr, "estimate_std"):
-            #     print("conf interval accuracy:", result["interval_accuracy"][-1])
-            #     print("conf interval length  :", result["interval_length"][-1])
+            if hasattr(smplr, "estimate_std"):
+                print("conf interval accuracy:", result["interval_accuracy"][-1])
+                print("conf interval length  :", result["interval_length"][-1])
             #     result_list_with_interval.append(result)
 
     if len(result_list) > 0:
