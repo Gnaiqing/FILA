@@ -23,29 +23,5 @@
     "sample_config": {
       "sample_strategy": "FILA-thompson"
     }
-  },
-  {
-    "name": "SS-neyman-oracle",
-    "smplr": "SS",
-    "smplr_config" : {
-      "prior_strength": 0
-    },
-    "sample_config": {
-      "sample_strategy": "neyman",
-      "oracle": true,
-      "early_stop" : true
-    }
-  },
-  {
-    "name": "SS-opt-oracle",
-    "smplr": "SS",
-    "smplr_config": {
-      "prior_strength": 0
-    },
-    "sample_config": {
-      "sample_strategy": "opt",
-      "oracle": true,
-      "early_stop": true
-    }
   }
 ]

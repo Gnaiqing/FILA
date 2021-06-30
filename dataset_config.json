@@ -20,55 +20,23 @@
     "n_labels": 3000
   },
   {
-    "name": "creditcard",
-    "path": "datasets/origin/creditcard-lr.h5"
-  },
-  {
-    "name": "safedriver",
-    "path": "datasets/origin/safedriver-xgb.h5"
-  },
-  {
-    "name": "tweets100k",
-    "path": "datasets/origin/tweets100k-svm.h5"
-  },
-  {
     "name": "amazon-google-blocked",
     "path": "datasets/output/structured_Amazon-Google_hybrid/test.csv",
-    "n_labels": 500
+    "n_labels": 300
   },
   {
     "name": "dblp-acm-blocked",
     "path": "datasets/output/structured_DBLP-ACM_hybrid/test.csv",
-    "n_labels": 500
+    "n_labels": 300
   },
   {
     "name": "dblp-google-blocked",
     "path": "datasets/output/structured_DBLP-GoogleScholar_hybrid/test.csv",
-    "n_labels": 500
+    "n_labels": 300
   },
   {
     "name": "walmart-amazon-blocked",
     "path": "datasets/output/structured_Walmart-Amazon_hybrid/test.csv",
-    "n_labels": 500
-  },
-  {
-    "name": "dblp-acm-dirty",
-    "path": "datasets/output/structured_DBLP-ACM_hybrid/test_dirty.csv",
-    "n_labels": 500
-  },
-  {
-    "name": "dblp-google-dirty",
-    "path": "datasets/output/structured_DBLP-GoogleScholar_hybrid/test_dirty.csv",
-    "n_labels": 500
-  },
-  {
-    "name": "itunes-amazon-dirty",
-    "path": "datasets/output/structured_iTunes-Amazon_hybrid/test_dirty.csv",
-    "n_labels": 50
-  },
-  {
-    "name": "walmart-amazon-dirty",
-    "path": "datasets/output/structured_Walmart-Amazon_hybrid/test_dirty.csv",
-    "n_labels": 500
+    "n_labels": 300
   }
 ]
