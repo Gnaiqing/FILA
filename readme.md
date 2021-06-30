@@ -1,6 +1,6 @@
 # FILA: Online Auditing of Model Accuracy in Machine Learning Based Entity Resolution Pipelines
 
-![overview](D:\PhD\project\EM-cal\figure\overview.png)
+![overview](overview.png)
 
 **FILA** is a tool that audit model accuracy of ML classifiers for entity resolution pipelines. It adaptively sample from unlabeled deployment data, ask human annotators to label the sample, and estimate the F-measure of the model. It leverages the delta method and stratified sampling to derive a sample allocation that approximately minimizes the estimator's variance under finite labeling budget.
 
@@ -27,7 +27,7 @@ exp_config.json: contains the configuration for adaptive samplers used for exper
 
   (We additionally printout confidence interval for FILA-Thompson here)
 
-  <img src="D:\PycharmProjects\magellan\oasis\fig\amazon-google\amazon-google_α=0.5.png" alt="amazon-google_α=0.5" style="zoom:67%;" />
+  <img src="amazon-google_α=0.5.png" alt="amazon-google_α=0.5" style="zoom:67%;" />
 
 * Collecting statistics of the estimators:
 
@@ -37,4 +37,4 @@ exp_config.json: contains the configuration for adaptive samplers used for exper
 
   Example output:
 
-  <img src="D:\PycharmProjects\magellan\oasis\fig\amazon-google\amazon-google_α=0.5_stats.png" alt="amazon-google_α=0.5_stats" style="zoom:72%;" />
+  <img src="amazon-google_α=0.5_stats.png" alt="amazon-google_α=0.5_stats" style="zoom:72%;" />
