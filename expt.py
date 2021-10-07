@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import json
 import argparse
 import os
+import pandas as pd
 
 
 # def oracle(idx):
@@ -144,10 +145,22 @@ def single_run(dataset_name, data_path, config_path="exp_config.json", random_se
 def multiple_run(dataset_name, data_path, config_path="exp_config.json",
                  random_seed = 0, n_expts = 100,
                  alpha=0.5, n_labels=5000, max_iter=1000000, name_list=None,
-                 restore=False, exp_tag = ""):
+                 restore=False, exp_tag = "", result_file = "results.csv"):
     print("Working on dataset %s" % dataset_name)
     np.random.seed(random_seed)
     random.seed(random_seed)
+    # store result in a dataframe
+    result_df = pd.DataFrame(
+        {
+            "dataset" : [],
+            "sampler": [],
+            "alpha": [],
+            "n_labels": [],
+            "abs_err":[],
+            "std_dev":[],
+            "time":[]
+        }
+    )
     data = oasis.Data()
     suffix = data_path.split(".")[-1]
     if suffix == "h5":
@@ -161,7 +174,7 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
     positive_scores = data.scores[positive_idx]
     threshold = np.min(positive_scores)
     result_list = []
-    result_list_with_interval = []
+    # result_list_with_interval = []
     config = json.load(open(config_path))
     oracle = lambda idx: data.labels[idx]
     for obj in config:
@@ -209,14 +222,50 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
             if hasattr(smplr, "estimate_std"):
                 print("conf interval accuracy:", result["interval_accuracy"][-1])
                 print("conf interval length  :", result["interval_length"][-1])
+
+            result_df = result_df.append(
+                {
+                    "dataset" : dataset_name,
+                    "sampler": result["name"],
+                    "alpha": alpha,
+                    "n_labels": n_labels,
+                    "abs_err":result["abs_err"].reshape(-1)[-1],
+                    "std_dev":result["variance"].reshape(-1)[-1],
+                    "time":result["mean_CPU_time"]
+                }, ignore_index=True
+            )
             #     result_list_with_interval.append(result)
 
     if len(result_list) > 0:
         title = "{}_{}".format(dataset_name, exp_tag)
         plt_expt(result_list,title, dataset_name)
 
+    # store data to result file
+    with open(result_file,"a") as f:
+        result_df.to_csv(f, header=f.tell() == 0, line_terminator='\n')
     # if len(result_list_with_interval) > 0:
     #     plt_conf(result_list_with_interval, dataset_name, dataset_name)
+
+
+def synthetic_experiment(hp, n_labels):
+    # conduct experiment on synthetic data
+    for size in ["1e+05"]:
+        for imbalance_ratio in ["10","30","100"]:
+            for sigma in ["1","5","25"]:
+                for classifier in ["mlp","svm"]:
+                    dataset_name = "syn-sz=%s-imb=%s-sigma=%s-%s" % \
+                        (size, imbalance_ratio, sigma, classifier)
+                    dataset_path = "datasets/synthetic/%s.csv" % dataset_name
+                    if os.path.exists(dataset_path):
+                        multiple_run(dataset_name,dataset_path,
+                                     alpha=hp.alpha,
+                                     n_labels=n_labels,
+                                     max_iter=hp.max_iter,
+                                     n_expts=hp.n_expts,
+                                     name_list=hp.smplr_list,
+                                     restore=hp.restore,
+                                     exp_tag = hp.exp_tag,
+                                     random_seed=hp.random_seed)
 
 
 if __name__ == "__main__":
@@ -244,7 +293,7 @@ if __name__ == "__main__":
         elif "n_labels" in dataset:
             n_labels = dataset["n_labels"]
         else:
-            n_labels = 3000
+            n_labels = 300
 
         if hp.dataset_list is not None and dataset_name not in hp.dataset_list:
             continue
@@ -266,4 +315,7 @@ if __name__ == "__main__":
                          restore=hp.restore,
                          exp_tag = hp.exp_tag,
                          random_seed=hp.random_seed)
+    if "synthetic" in hp.dataset_list:
+        synthetic_experiment(hp, n_labels)
+
 

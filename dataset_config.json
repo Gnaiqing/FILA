@@ -20,6 +20,21 @@
     "n_labels": 3000
   },
   {
+    "name": "creditcard",
+    "path": "datasets/origin/creditcard-lr.h5",
+    "n_labels": 3000
+  },
+  {
+    "name": "safedriver",
+    "path": "datasets/origin/safedriver-xgb.h5",
+    "n_labels": 3000
+  },
+  {
+    "name": "tweets100k",
+    "path": "datasets/origin/tweets100k-svm.h5",
+    "n_labels": 3000
+  },
+  {
     "name": "amazon-google-blocked",
     "path": "datasets/output/structured_Amazon-Google_hybrid/test.csv",
     "n_labels": 300
@@ -37,6 +52,46 @@
   {
     "name": "walmart-amazon-blocked",
     "path": "datasets/output/structured_Walmart-Amazon_hybrid/test.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "uci-ism",
+    "path": "datasets/uci/ism_mlp.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "uci-cam",
+    "path": "datasets/uci/cam_mlp.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "uci-compustat",
+    "path": "datasets/uci/compustat_mlp.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "uci-covtype",
+    "path": "datasets/uci/covtype_mlp.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "uci-letter",
+    "path": "datasets/uci/letter_mlp.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "uci-lettera",
+    "path": "datasets/uci/lettera_mlp.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "uci-lettervowel",
+    "path": "datasets/uci/lettervowel_mlp.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "uci-pendigits",
+    "path": "datasets/uci/pendigits_mlp.csv",
     "n_labels": 300
   }
 ]

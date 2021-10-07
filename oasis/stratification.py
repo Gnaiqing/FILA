@@ -107,6 +107,9 @@ def stratify_by_scores(scores, goal_n_strata='auto', method='cum_sqrt_F',
         if n_bins == 'auto':
             # choose n_bins heuristically
             width_score = _heuristic_bin_width(scores)
+            # make sure width score is greater than 0
+            if width_score == 0.0:
+                width_score = 1.0
             n_bins = np.ceil(sp.ptp(scores)/width_score).astype(int)
             # print("Automatically setting n_bins = {}.".format(n_bins))
 
