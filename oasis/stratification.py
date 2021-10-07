@@ -178,7 +178,7 @@ def stratify_by_scores(scores, goal_n_strata='auto', method='cum_sqrt_F',
         allocations = np.digitize(allocations, nonempty_ids, right=True)
 
         if n_strata < goal_n_strata:
-            warnings.warn("Failed to create {} strata".format(goal_n_strata))
+            warnings.warn("Failed to create {} strata. Actual: {} strata".format(goal_n_strata, n_strata))
 
     return allocations
 

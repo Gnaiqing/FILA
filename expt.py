@@ -216,7 +216,6 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
             print(result["name"], "mean_time:", result["mean_CPU_time"], "iterations:", result["mean_n_iterations"])
             result_list.append(result)
             # show results qualitatively
-            print("Evaluating ", result["name"])
             print("Abs. Err:", result["abs_err"].reshape(-1)[-1])
             print("Std. Dev:", result["variance"].reshape(-1)[-1])
             if hasattr(smplr, "estimate_std"):
@@ -316,6 +315,7 @@ if __name__ == "__main__":
                          exp_tag = hp.exp_tag,
                          random_seed=hp.random_seed)
     if "synthetic" in hp.dataset_list:
+        n_labels = 300
         synthetic_experiment(hp, n_labels)
 
 

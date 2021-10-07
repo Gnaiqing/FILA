@@ -223,7 +223,8 @@ class Data:
             self.probs = expit(self.scores)
         if self.scores is None:
             warnings.warn('converting probabilities into scores', UserWarning)
-            self.scores = logit(self.probs)
+            # clip the probs to avoid inf value
+            self.scores = logit(np.clip(self.probs,0.001,0.999))
         if self.preds is None:
             warnings.warn('making predictions from scores using default threshold of zero', UserWarning)
             self.preds = (self.scores >= 0) * 1
@@ -260,7 +261,8 @@ class Data:
             self.probs = expit(self.scores)
         if self.scores is None:
             warnings.warn('converting probabilities into scores', UserWarning)
-            self.scores = logit(self.probs)
+            # clip the probs to avoid inf value
+            self.scores = logit(np.clip(self.probs,0.001,0.999))
         if self.preds is None:
             warnings.warn('making predictions from scores using default threshold of zero', UserWarning)
             self.preds = (self.scores >= 0) * 1

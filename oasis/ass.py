@@ -181,8 +181,11 @@ class StratifiedSampler(PassiveSampler):
         self._BB_model.update(ell, extra_info['stratum'])
         #  no prior information
         a,b = self._BB_model.get_counts()
-        self._TP = (a/(a+b)*self.strata.sizes_)[self.pos_strata_idx].sum()
-        self._FN = (a/(a+b)*self.strata.sizes_)[self.neg_strata_idx].sum()
+        c = np.divide(a,a+b, out=np.zeros(a.shape, dtype=float), where=(a+b!=0))
+        self._TP = (c*self.strata.sizes_)[self.pos_strata_idx].sum()
+        self._FN = (c*self.strata.sizes_)[self.neg_strata_idx].sum()
+        # self._TP = (a/(a+b)*self.strata.sizes_)[self.pos_strata_idx].sum()
+        # self._FN = (a/(a+b)*self.strata.sizes_)[self.neg_strata_idx].sum()
         self._FP = self.P - self._TP
         # bayesian methods: use prior information
         # self._TP = (self._BB_model.theta_*self.strata.sizes_)[self.pos_strata_idx].sum()
@@ -194,8 +197,11 @@ class StratifiedSampler(PassiveSampler):
         strata_var = self._BB_model.theta_ * (1-self._BB_model.theta_)
         partial_tp = (self.P *self.alpha + (1-self.alpha)*self._FN)/(self.P*self.alpha+(self._TP+self._FN)*(1-self.alpha))**2
         partial_fn = (1-self.alpha)*self._TP/(self.P*self.alpha+(self._TP+self._FN)*(1-self.alpha))**2
-        var_p = ((self.strata.sizes_*partial_tp)**2*strata_var / self.strata._n_sampled)[self.pos_strata_idx].sum()
-        var_n = ((self.strata.sizes_*partial_fn)**2*strata_var / self.strata._n_sampled)[self.neg_strata_idx].sum()
+        with np.errstate(divide='ignore',invalid='ignore'):
+            # when there is no sample from a strata. The variance will gives nan or inf. But this doesn't matter since
+            # we'll soon have sample from all strata.
+            var_p = ((self.strata.sizes_*partial_tp)**2*strata_var / self.strata._n_sampled)[self.pos_strata_idx].sum()
+            var_n = ((self.strata.sizes_*partial_fn)**2*strata_var / self.strata._n_sampled)[self.neg_strata_idx].sum()
         est_std = np.sqrt(var_p + var_n)
         self._estimate_std[self.t_] = est_std
 
