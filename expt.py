@@ -78,6 +78,41 @@ def plt_conf(results, title, dataset_name):
     plt.savefig(path, bbox_inches="tight")
 
 
+def plt_history(results,title, dataset_name):
+    fontsize = 14
+    fig = plt.figure(figsize=[24,6.4])
+    fig.suptitle(title)
+    # plot table at the bottom
+    round_mean = np.around(results[0]["strata_mean"], decimals=4)
+    cell_text = np.array([results[0]["strata_size"], round_mean])
+    n_strata = results[0]["history"].shape[1]
+    cols = np.arange(n_strata) + 1
+    rows = ["size", "mean"]
+    plt.table(cellText=cell_text,
+              rowLabels=rows,
+              colLabels=cols,
+              loc="bottom")
+
+
+    n_method = len(results)
+    for i in range(n_method):
+        ax = fig.add_subplot(1, n_method, i+1)
+        result = results[i]
+        x = np.arange(len(result["history"])) + 1
+        labels = np.arange(n_strata) + 1
+        ax.plot(x, result["history"], label = labels)
+        ax.set_xlabel("budget")
+        ax.set_ylabel("sample for each strata")
+        ax.title.set_text(result["name"])
+        ax.legend()
+        plt.subplots_adjust(bottom=0.2)
+
+    # add
+    plt.show()
+
+
+
+
 def single_run(dataset_name, data_path, config_path="exp_config.json", random_seed = 0,
                alpha=0.5, n_labels=5000, max_iter=100000, name_list=None, exp_tag=""):
     print("Working on dataset %s" % dataset_name)
@@ -170,6 +205,9 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
     else:
         raise Exception("File format not supported: %s" % suffix)
     data.calc_true_performance(printout=True, alpha=alpha)
+    if np.isnan(data.F_measure):
+        print("F measure is nan. Skip dataset.")
+        return
     positive_idx = np.where(data.preds == 1)
     positive_scores = data.scores[positive_idx]
     threshold = np.min(positive_scores)
@@ -212,6 +250,7 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
             if not restore or not os.path.exists(output_file):
                 oasis.repeat_expt(smplr, n_expts, n_labels, output_file, **sample_config)
             result = oasis.process_expt(output_file, F_gt = data.F_measure)
+            # TODO: print history based on sample method
             result["name"] = obj["name"]
             print(result["name"], "mean_time:", result["mean_CPU_time"], "iterations:", result["mean_n_iterations"])
             result_list.append(result)
@@ -238,6 +277,7 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
     if len(result_list) > 0:
         title = "{}_{}".format(dataset_name, exp_tag)
         plt_expt(result_list,title, dataset_name)
+        plt_history(result_list, title, dataset_name)
 
     # store data to result file
     with open(result_file,"a") as f:

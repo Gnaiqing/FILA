@@ -371,6 +371,14 @@ class OASISSampler(PassiveSampler):
         else:
             self._inst_pmf = np.zeros(self.strata.n_strata_, dtype=float)
 
+        # record the history of sample selection
+        self.history = np.zeros((max_iter, self.strata.n_strata_), dtype=int)
+        self.n_strata_ = self.strata.n_strata_
+        if "labels" in kwargs:
+            self.labels = kwargs["labels"]
+            self.strata_var = self.strata.intra_var(self.labels)
+            self.strata_mean = self.strata.intra_mean(self.labels)
+
     @property
     def inst_pmf_(self):
         if self.record_inst_hist:
@@ -412,6 +420,9 @@ class OASISSampler(PassiveSampler):
 
         #: Update the instrumental distribution by updating the BB model
         self._BB_model.update(ell, extra_info['stratum'])
+        # Update the history information
+        if extra_info["is_new"]:
+            self.history[self.n_sample_distinct] = self.strata._n_sampled_distinct
 
     def _calc_BB_prior(self, theta_0):
         """Generate a prior for the BB model
@@ -502,3 +513,6 @@ class OASISSampler(PassiveSampler):
                                       dtype=float)
         else:
             self._inst_pmf = np.zeros(self.strata.n_strata_, dtype=float)
+
+        # clear history
+        self.history = np.zeros_like(self.history)

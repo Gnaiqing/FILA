@@ -296,6 +296,9 @@ class Strata:
         # Keep a record of how many items have been sampled
         self._n_sampled = np.zeros(self.n_strata_, dtype=int)
 
+        # how many distinct items have been sampled
+        self._n_sampled_distinct = np.zeros(self.n_strata_, dtype=int)
+
     def _sample_stratum(self, pmf=None, replace=True):
         """Sample a stratum
 
@@ -353,6 +356,9 @@ class Strata:
             stratum_loc = np.random.choice(stratum_locs)
 
         # Record that item has been sampled
+        if not self._sampled[stratum_idx][stratum_loc]:
+            self._n_sampled_distinct[stratum_idx] += 1
+
         self._sampled[stratum_idx][stratum_loc] = True
         self._n_sampled[stratum_idx] += 1
         # Get generic location
@@ -441,3 +447,4 @@ class Strata:
         """Reset the instance to begin sampling from scratch"""
         self._sampled = [np.repeat(False, x) for x in self.sizes_]
         self._n_sampled = np.zeros(self.n_strata_, dtype=int)
+        self._n_sampled_distinct = np.zeros(self.n_strata_, dtype=int)

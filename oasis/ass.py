@@ -66,7 +66,9 @@ class StratifiedSampler(PassiveSampler):
             self.prior_strength = 2*self.strata.n_strata_
         else:
             self.prior_strength = float(prior_strength)
-
+        # record the history of sample selection
+        self.history = np.zeros((max_iter, self.strata.n_strata_), dtype=int)
+        self.n_strata_ = self.strata.n_strata_
         # Instantiate Beta-Bernoulli model using probabilities averaged over
         # opt_class
         theta_0 = self.strata.intra_mean(self._probs_avg_opt_class)
@@ -123,13 +125,20 @@ class StratifiedSampler(PassiveSampler):
             fn_est = (mu_hat*self.strata.sizes_)[self.neg_strata_idx].sum()
             partial_tp = self.P*self.alpha + (1-self.alpha)*fn_est
             partial_fn = (1-self.alpha)*tp_est
+            # heuristic: stop sampling from a strata if the sample size already
+            # exceed K times of the population size of that strata. This is mainly
+            # to avoid long execution time caused by redundant sampling
+            n_sampled = self.strata._n_sampled
+            strata_size = self.strata.sizes_
+            K = 10 # parameter that can be adjusted
+            continue_sample = (n_sampled < strata_size * K).astype(int)
             # check if each strata is fully sampled already
             # strata_empty = np.ones(self.strata.n_strata_)
             # for stratum_idx in np.arange(self.strata.n_strata_):
             #     if np.all(self.strata._sampled[stratum_idx]):
             #         strata_empty[stratum_idx] = 0
             # opt_strata_weight = emp_strata_std * self.strata.sizes_ * strata_empty
-            opt_strata_weight = emp_strata_std * self.strata.sizes_
+            opt_strata_weight = emp_strata_std * self.strata.sizes_ * continue_sample
             opt_strata_weight[self.pos_strata_idx] = opt_strata_weight[self.pos_strata_idx]*partial_tp
             opt_strata_weight[self.neg_strata_idx] = opt_strata_weight[self.neg_strata_idx]*partial_fn
             weight = opt_strata_weight / self.strata._n_sampled
@@ -143,12 +152,14 @@ class StratifiedSampler(PassiveSampler):
             mu_hat = np.random.beta(a,b)
             emp_strata_var = mu_hat * (1-mu_hat)
             emp_strata_std = np.sqrt(emp_strata_var)
-            # strata_empty = np.ones(self.strata.n_strata_)
-            # for stratum_idx in np.arange(self.strata.n_strata_):
-            #     if np.all(self.strata._sampled[stratum_idx]):
-            #         strata_empty[stratum_idx] = 0
-            # opt_strata_weight = emp_strata_std * self.strata.sizes_*strata_empty
-            opt_strata_weight = emp_strata_std * self.strata.sizes_
+            # heuristic: stop sampling from a strata if the sample size already
+            # exceed K times of the population size of that strata. This is mainly
+            # to avoid long execution time caused by redundant sampling
+            n_sampled = self.strata._n_sampled
+            strata_size = self.strata.sizes_
+            K = 10 # parameter that can be adjusted
+            continue_sample = (n_sampled < strata_size * K).astype(int)
+            opt_strata_weight = emp_strata_std * self.strata.sizes_ * continue_sample
             weight = opt_strata_weight / self.strata._n_sampled
             stratum_idx = np.argmax(weight)
 
@@ -204,7 +215,9 @@ class StratifiedSampler(PassiveSampler):
             var_n = ((self.strata.sizes_*partial_fn)**2*strata_var / self.strata._n_sampled)[self.neg_strata_idx].sum()
         est_std = np.sqrt(var_p + var_n)
         self._estimate_std[self.t_] = est_std
-
+        # Update the sample history for analysis purpose
+        if extra_info["is_new"]:
+            self.history[self.n_sample_distinct] = self.strata._n_sampled_distinct
 
     def _calc_BB_prior(self, theta_0):
         """Generate a prior for the BB model
@@ -243,6 +256,7 @@ class StratifiedSampler(PassiveSampler):
         history of estimates.
         """
         super(StratifiedSampler, self).reset()
+        self.history = np.zeros_like(self.history)
         self.strata.reset()
         self._BB_model.reset()
 

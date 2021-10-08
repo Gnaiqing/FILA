@@ -101,6 +101,8 @@ class PassiveSampler:
 
         # Iteration index
         self.t_ = 0
+        # Number of distinct samples
+        self.n_sample_distinct = 0
 
         # Array to record whether oracle was queried at each iteration
         self._queried_oracle = np.repeat(False, self._max_iter)
@@ -154,6 +156,7 @@ class PassiveSampler:
         self._FN = np.zeros(self._n_class)
         self._TN = np.zeros(self._n_class)
         self.t_ = 0
+        self.n_sample_distinct = 0
         self._queried_oracle = np.repeat(False, self._max_iter)
         self.cached_labels_ = np.repeat(np.nan, self._n_items)
         self._estimate = np.tile(np.nan, [self._max_iter, self._n_class])
@@ -165,8 +168,10 @@ class PassiveSampler:
         """Procedure for a single iteration (sampling and updating)"""
         # Sample item
         loc, weight, extra_info = self._sample_item(**kwargs)
+        # Check whether the data is already sampled
         # Query label
-        ell = self._query_label(loc)
+        ell, newLabel = self._query_label(loc)
+        extra_info["is_new"] = newLabel
         self._oracle_results[self.t_] = ell
         # Get predictions
         ell_hat = self.predictions[loc,:][0]
@@ -176,7 +181,8 @@ class PassiveSampler:
 
         # Update
         self._update_estimate_and_sampler(ell, ell_hat, weight, extra_info, **kwargs)
-
+        if newLabel:
+            self.n_sample_distinct = self.n_sample_distinct + 1
         self.t_ = self.t_ + 1
 
     def sample(self, n_to_sample, **kwargs):
@@ -238,6 +244,7 @@ class PassiveSampler:
 
         n_sampled = 0 # number of distinct items sampled this round
         while n_sampled < n_to_sample:
+
             success = self.sample(1,**kwargs)
             if not success:
                 break
@@ -267,9 +274,10 @@ class PassiveSampler:
         """
         # Try to get label from cache
         ell = self.cached_labels_[loc]
-
+        newLabel = False # whether the data is new observed
         if np.isnan(ell):
             # Label has not been cached. Need to query oracle
+            newLabel = True
             oracle_arg = self.identifiers[loc]
             ell = self.oracle(oracle_arg)
             if ell not in [0, 1]:
@@ -278,7 +286,7 @@ class PassiveSampler:
             self._queried_oracle[self.t_] = True
             self.cached_labels_[loc] = ell
 
-        return ell
+        return ell, newLabel
 
     def _F_measure(self, alpha, TP, FP, FN, return_num_den=False):
         """Calculate the weighted F-measure"""

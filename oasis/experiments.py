@@ -41,6 +41,16 @@ def repeat_expt(smplr, n_expts, n_labels, output_file = None, **kwargs):
     array_std = f.create_carray(f.root,'F_std', float_atom, (n_expts, n_labels, n_class))
     array_s = f.create_carray(f.root, 'n_iterations', int_atom, (n_expts, 1))
     array_t = f.create_carray(f.root, 'CPU_time', float_atom, (n_expts, 1))
+    # record sample history for analyze purpose
+    if hasattr(smplr, 'history'):
+        # create an array to store the history of sample selection
+        array_h = f.create_carray(f.root, 'history', float_atom, (n_expts, n_labels, smplr.n_strata_))
+    # record strata size and mean for analyze purpose
+    if hasattr(smplr, 'n_strata_'):
+        array_strata_size = f.create_carray(f.root, 'strata_size', int_atom, (smplr.n_strata_,))
+        array_strata_mean = f.create_carray(f.root, 'strata_mean', float_atom, (smplr.n_strata_,))
+        array_strata_size[:] = smplr.strata.sizes_
+        array_strata_mean[:] = smplr.strata_mean
 
     logging.info("Starting {} experiments".format(n_expts))
     for i in range(n_expts):
@@ -60,6 +70,9 @@ def repeat_expt(smplr, n_expts, n_labels, output_file = None, **kwargs):
                 array_std[i,:,:] = smplr.estimate_std.reshape(-1,n_class)
         array_s[i] = smplr.t_
         array_t[i] = tf - ti
+        if hasattr(smplr, 'history'):
+            array_h[i,:,:] = smplr.history[0:n_labels,:]
+
     f.close()
 
     logging.info("Completed all experiments")
@@ -108,6 +121,10 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
     # store the accuracy and length of confidence interval
     I_mean_length = np.empty([n_labels, n_class], dtype='float')
     I_accuracy = np.empty([n_labels, n_class], dtype='float')
+    # store the history info and strata info
+    S_size = np.array(h5_file.root.strata_size)
+    S_mean = np.array(h5_file.root.strata_mean)
+    H = np.mean(np.array(h5_file.root.history), axis=0)
 
     if inmemory:
         F_mem = F[:,:,:]
@@ -124,6 +141,8 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
         else:
             temp = F[:,t,:]
             temp_std = F_std[:,t,:]
+
+
         if ignorenan:
             n_sample[t] = np.sum(~np.isnan(temp))
             # Expect to see RuntimeWarnings if array contains all NaNs
@@ -155,6 +174,7 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
                 ub = temp + 1.96*temp_std
                 ub = np.nan_to_num(ub, nan=1)
                 I_accuracy[t] = np.mean((lb<=F_gt)& (F_gt<=ub), axis=0)
+        # TODO: Load the history and strata information
 
     logging.info("Processing complete".format())
 
@@ -172,7 +192,10 @@ def process_expt(h5_path, inmemory = True, ignorenan = False, F_gt = None):
             'h5_path': h5_path,
             'abs_err': F_abserr,
             'interval_length': I_mean_length,
-            'interval_accuracy': I_accuracy
+            'interval_accuracy': I_accuracy,
+            'strata_size': S_size,
+            'strata_mean':S_mean,
+            'history':H
             }
 
 
