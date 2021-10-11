@@ -2,6 +2,7 @@ import numpy as np
 import random
 import oasis
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import json
 import argparse
 import os
@@ -81,32 +82,38 @@ def plt_conf(results, title, dataset_name):
 def plt_history(results,title, dataset_name):
     fontsize = 14
     fig = plt.figure(figsize=[24,6.4])
+    n_method = len(results)
+    gs = fig.add_gridspec(n_method, 4) # the last row will be used as table
     fig.suptitle(title)
     # plot table at the bottom
+    ax0 = fig.add_subplot(gs[-1,1:-1])
+    ax0.axis('off')
+    ax0.axis('tight')
     round_mean = np.around(results[0]["strata_mean"], decimals=4)
     cell_text = np.array([results[0]["strata_size"], round_mean])
     n_strata = results[0]["history"].shape[1]
     cols = np.arange(n_strata) + 1
     rows = ["size", "mean"]
-    plt.table(cellText=cell_text,
+    ax0.table(cellText=cell_text,
               rowLabels=rows,
               colLabels=cols,
-              loc="bottom")
-
+              loc="center",
+              fontsize=24)
 
     n_method = len(results)
     for i in range(n_method):
-        ax = fig.add_subplot(1, n_method, i+1)
+        ax = fig.add_subplot(gs[:-1,i])
         result = results[i]
         x = np.arange(len(result["history"])) + 1
         labels = np.arange(n_strata) + 1
         ax.plot(x, result["history"], label = labels)
-        ax.set_xlabel("budget")
-        ax.set_ylabel("sample for each strata")
-        ax.title.set_text(result["name"])
+        ax.set_xlabel("budget", fontsize=fontsize)
+        ax.set_ylabel("sample for each strata",fontsize=fontsize)
+        ax.set_title(result["name"], fontsize=fontsize)
+        # ax.title.set_text(result["name"])
         ax.legend()
-        plt.subplots_adjust(bottom=0.2)
 
+    fig.tight_layout()
     # add
     plt.show()
 
