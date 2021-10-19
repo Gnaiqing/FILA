@@ -20,11 +20,6 @@
     "n_labels": 3000
   },
   {
-    "name": "creditcard",
-    "path": "datasets/origin/creditcard-lr.h5",
-    "n_labels": 3000
-  },
-  {
     "name": "safedriver",
     "path": "datasets/origin/safedriver-xgb.h5",
     "n_labels": 3000
@@ -55,43 +50,94 @@
     "n_labels": 300
   },
   {
-    "name": "uci-ism",
-    "path": "datasets/uci/ism_mlp.csv",
+    "name": "ism-mlp",
+    "path": "datasets/uci/ism-mlp.csv",
     "n_labels": 300
   },
   {
-    "name": "uci-cam",
-    "path": "datasets/uci/cam_mlp.csv",
+    "name": "cam-mlp",
+    "path": "datasets/uci/cam-mlp.csv",
     "n_labels": 300
   },
   {
-    "name": "uci-compustat",
-    "path": "datasets/uci/compustat_mlp.csv",
+    "name": "compustat-mlp",
+    "path": "datasets/uci/compustat-mlp.csv",
+    "n_labels": 300
+  },
+
+  {
+    "name": "letter-mlp",
+    "path": "datasets/uci/letter-mlp.csv",
     "n_labels": 300
   },
   {
-    "name": "uci-covtype",
-    "path": "datasets/uci/covtype_mlp.csv",
+    "name": "lettera-mlp",
+    "path": "datasets/uci/lettera-mlp.csv",
     "n_labels": 300
   },
   {
-    "name": "uci-letter",
-    "path": "datasets/uci/letter_mlp.csv",
+    "name": "lettervowel-mlp",
+    "path": "datasets/uci/lettervowel-mlp.csv",
     "n_labels": 300
   },
   {
-    "name": "uci-lettera",
-    "path": "datasets/uci/lettera_mlp.csv",
+    "name": "covtype-mlp",
+    "path": "datasets/uci/covtype-mlp.csv",
     "n_labels": 300
   },
   {
-    "name": "uci-lettervowel",
-    "path": "datasets/uci/lettervowel_mlp.csv",
+    "name": "pendigits-mlp",
+    "path": "datasets/uci/pendigits-mlp.csv",
     "n_labels": 300
   },
   {
-    "name": "uci-pendigits",
-    "path": "datasets/uci/pendigits_mlp.csv",
+    "name": "ism-svm",
+    "path": "datasets/uci/ism-svm.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "cam-svm",
+    "path": "datasets/uci/cam-svm.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "compustat-svm",
+    "path": "datasets/uci/compustat-svm.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "letter-svm",
+    "path": "datasets/uci/letter-svm.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "lettera-svm",
+    "path": "datasets/uci/lettera-svm.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "lettervowel-svm",
+    "path": "datasets/uci/lettervowel-svm.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "covtype-svm",
+    "path": "datasets/uci/covtype-svm.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "pendigits-svm",
+    "path": "datasets/uci/pendigits-svm.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "creditcard",
+    "path": "datasets/origin/creditcard-lr.h5",
+    "n_labels": 3000
+  },
+  {
+    "name" : "devanagari-cnn",
+    "path": "datasets/uci/devanagari.csv",
     "n_labels": 300
   }
 ]

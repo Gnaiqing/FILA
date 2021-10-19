@@ -81,16 +81,16 @@ def plt_conf(results, title, dataset_name):
 
 def plt_history(results,title, dataset_name):
     fontsize = 14
-    fig = plt.figure(figsize=[24,6.4])
+    fig = plt.figure(figsize=[24,8])
     n_method = len(results)
     gs = fig.add_gridspec(n_method, 4) # the last row will be used as table
     fig.suptitle(title)
     # plot table at the bottom
-    ax0 = fig.add_subplot(gs[-1,1:-1])
+    ax0 = fig.add_subplot(gs[-1,:])
     ax0.axis('off')
     ax0.axis('tight')
     round_mean = np.around(results[0]["strata_mean"], decimals=4)
-    cell_text = np.array([results[0]["strata_size"], round_mean])
+    cell_text = np.array([results[0]["strata_size"].astype(int), round_mean])
     n_strata = results[0]["history"].shape[1]
     cols = np.arange(n_strata) + 1
     rows = ["size", "mean"]
@@ -98,7 +98,7 @@ def plt_history(results,title, dataset_name):
               rowLabels=rows,
               colLabels=cols,
               loc="center",
-              fontsize=24)
+              fontsize=fontsize)
 
     n_method = len(results)
     for i in range(n_method):
@@ -114,8 +114,9 @@ def plt_history(results,title, dataset_name):
         ax.legend()
 
     fig.tight_layout()
-    # add
-    plt.show()
+    path = "fig/%s/%s_history.png" % (dataset_name,title)
+    plt.savefig(path, bbox_inches="tight")
+    # plt.show()
 
 
 
@@ -257,13 +258,12 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
             if not restore or not os.path.exists(output_file):
                 oasis.repeat_expt(smplr, n_expts, n_labels, output_file, **sample_config)
             result = oasis.process_expt(output_file, F_gt = data.F_measure)
-            # TODO: print history based on sample method
             result["name"] = obj["name"]
             print(result["name"], "mean_time:", result["mean_CPU_time"], "iterations:", result["mean_n_iterations"])
             result_list.append(result)
             # show results qualitatively
             print("Abs. Err:", result["abs_err"].reshape(-1)[-1])
-            print("Std. Dev:", result["variance"].reshape(-1)[-1])
+            print("Std. Dev:", np.sqrt(result["variance"].reshape(-1)[-1]))
             if hasattr(smplr, "estimate_std"):
                 print("conf interval accuracy:", result["interval_accuracy"][-1])
                 print("conf interval length  :", result["interval_length"][-1])
@@ -275,7 +275,7 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
                     "alpha": alpha,
                     "n_labels": n_labels,
                     "abs_err":result["abs_err"].reshape(-1)[-1],
-                    "std_dev":result["variance"].reshape(-1)[-1],
+                    "std_dev":np.sqrt(result["variance"].reshape(-1)[-1]),
                     "time":result["mean_CPU_time"]
                 }, ignore_index=True
             )

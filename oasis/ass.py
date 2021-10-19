@@ -192,7 +192,9 @@ class StratifiedSampler(PassiveSampler):
         self._BB_model.update(ell, extra_info['stratum'])
         #  no prior information
         a,b = self._BB_model.get_counts()
-        c = np.divide(a,a+b, out=np.zeros(a.shape, dtype=float), where=(a+b!=0))
+        #c = np.divide(a,a+b, out=np.zeros(a.shape, dtype=float), where=(a+b!=0))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            c = a/(a+b)
         self._TP = (c*self.strata.sizes_)[self.pos_strata_idx].sum()
         self._FN = (c*self.strata.sizes_)[self.neg_strata_idx].sum()
         # self._TP = (a/(a+b)*self.strata.sizes_)[self.pos_strata_idx].sum()
