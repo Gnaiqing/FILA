@@ -45,7 +45,7 @@ def plt_expt(result_list, title, dataset_name):
         plt.yticks(fontsize=fontsize)
     plt.ylabel("abs_err",fontsize=fontsize)
     plt.title(title,fontsize=fontsize)
-    plt.legend()
+    # plt.legend()
 
     plt.subplot(212)
     for result in result_list:
@@ -81,32 +81,36 @@ def plt_conf(results, title, dataset_name):
 
 def plt_history(results,title, dataset_name):
     fontsize = 14
-    fig = plt.figure(figsize=[24,8])
+    fig = plt.figure(figsize=[12.8, 4.0])
     n_method = len(results)
-    gs = fig.add_gridspec(n_method, 4) # the last row will be used as table
-    fig.suptitle(title)
+    gs = fig.add_gridspec(3, n_method) # the last row will be used as table
+    # fig.suptitle(title, fontsize=fontsize + 2)
     # plot table at the bottom
     ax0 = fig.add_subplot(gs[-1,:])
     ax0.axis('off')
     ax0.axis('tight')
     round_mean = np.around(results[0]["strata_mean"], decimals=4)
-    cell_text = np.array([results[0]["strata_size"].astype(int), round_mean])
+    pred = np.round(round_mean)
+    cell_text = np.array([results[0]["strata_size"].astype(int), round_mean, pred])
     n_strata = results[0]["history"].shape[1]
     cols = np.arange(n_strata) + 1
-    rows = ["size", "mean"]
-    ax0.table(cellText=cell_text,
+    rows = ["size", "mean", "pred"]
+    table = ax0.table(cellText=cell_text,
               rowLabels=rows,
               colLabels=cols,
-              loc="center",
-              fontsize=fontsize)
+              loc="center")
 
+    table.auto_set_font_size(False)
+    table.set_fontsize(fontsize)
+    table.scale(1,1.5)
+    # table.auto_set_column_width(col=list(range(n_strata)))
     n_method = len(results)
     for i in range(n_method):
         ax = fig.add_subplot(gs[:-1,i])
         result = results[i]
         x = np.arange(len(result["history"])) + 1
         labels = np.arange(n_strata) + 1
-        ax.plot(x, result["history"], label = labels)
+        ax.plot(x, result["history"], label = labels, alpha=0.8)
         ax.set_xlabel("budget", fontsize=fontsize)
         ax.set_ylabel("sample for each strata",fontsize=fontsize)
         ax.set_title(result["name"], fontsize=fontsize)
@@ -116,7 +120,7 @@ def plt_history(results,title, dataset_name):
     fig.tight_layout()
     path = "fig/%s/%s_history.png" % (dataset_name,title)
     plt.savefig(path, bbox_inches="tight")
-    # plt.show()
+    plt.show()
 
 
 
@@ -279,7 +283,7 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
                     "time":result["mean_CPU_time"]
                 }, ignore_index=True
             )
-            #     result_list_with_interval.append(result)
+            #   result_list_with_interval.append(result)
 
     if len(result_list) > 0:
         title = "{}_{}".format(dataset_name, exp_tag)
@@ -287,8 +291,8 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
         plt_history(result_list, title, dataset_name)
 
     # store data to result file
-    with open(result_file,"a") as f:
-        result_df.to_csv(f, header=f.tell() == 0, line_terminator='\n')
+    # with open(result_file,"a") as f:
+    #     result_df.to_csv(f, header=f.tell() == 0, line_terminator='\n')
     # if len(result_list_with_interval) > 0:
     #     plt_conf(result_list_with_interval, dataset_name, dataset_name)
 

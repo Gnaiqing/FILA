@@ -1,23 +1,63 @@
 [
   {
-    "name": "amazon-google",
+    "name": "Amazon-Google",
     "path": "datasets/origin/amazon-googleproducts-svm.h5",
     "n_labels": 3000
   },
   {
-    "name": "abt-buy",
+    "name": "Abt-Buy",
     "path": "datasets/origin/abt-buy-svm.h5",
     "n_labels": 3000
   },
   {
-    "name": "dblp-acm",
+    "name": "Dblp-Acm",
     "path": "datasets/origin/dblp-acm-svm-small.h5",
     "n_labels": 3000
   },
   {
-    "name": "restaurant",
+    "name": "Restaurant",
     "path": "datasets/origin/restaurant-svm.h5",
     "n_labels": 3000
+  },
+  {
+    "name": "Amazon-Google-Blocked",
+    "path": "datasets/output/structured_Amazon-Google_hybrid/test.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "Dblp-Acm-Blocked",
+    "path": "datasets/output/structured_DBLP-ACM_hybrid/test.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "Dblp-Google-Bblocked",
+    "path": "datasets/output/structured_DBLP-GoogleScholar_hybrid/test.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "Walmart-Amazon-Blocked",
+    "path": "datasets/output/structured_Walmart-Amazon_hybrid/test.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "Lettervowel",
+    "path": "datasets/uci/lettervowel-mlp.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "Covtype",
+    "path": "datasets/uci/covtype-mlp.csv",
+    "n_labels": 300
+  },
+  {
+    "name": "Creditcard",
+    "path": "datasets/origin/creditcard-lr.h5",
+    "n_labels": 3000
+  },
+  {
+    "name" : "Devanagari",
+    "path": "datasets/uci/devanagari.csv",
+    "n_labels": 300
   },
   {
     "name": "safedriver",
@@ -28,26 +68,6 @@
     "name": "tweets100k",
     "path": "datasets/origin/tweets100k-svm.h5",
     "n_labels": 3000
-  },
-  {
-    "name": "amazon-google-blocked",
-    "path": "datasets/output/structured_Amazon-Google_hybrid/test.csv",
-    "n_labels": 300
-  },
-  {
-    "name": "dblp-acm-blocked",
-    "path": "datasets/output/structured_DBLP-ACM_hybrid/test.csv",
-    "n_labels": 300
-  },
-  {
-    "name": "dblp-google-blocked",
-    "path": "datasets/output/structured_DBLP-GoogleScholar_hybrid/test.csv",
-    "n_labels": 300
-  },
-  {
-    "name": "walmart-amazon-blocked",
-    "path": "datasets/output/structured_Walmart-Amazon_hybrid/test.csv",
-    "n_labels": 300
   },
   {
     "name": "ism-mlp",
@@ -64,7 +84,6 @@
     "path": "datasets/uci/compustat-mlp.csv",
     "n_labels": 300
   },
-
   {
     "name": "letter-mlp",
     "path": "datasets/uci/letter-mlp.csv",
@@ -75,16 +94,7 @@
     "path": "datasets/uci/lettera-mlp.csv",
     "n_labels": 300
   },
-  {
-    "name": "lettervowel-mlp",
-    "path": "datasets/uci/lettervowel-mlp.csv",
-    "n_labels": 300
-  },
-  {
-    "name": "covtype-mlp",
-    "path": "datasets/uci/covtype-mlp.csv",
-    "n_labels": 300
-  },
+
   {
     "name": "pendigits-mlp",
     "path": "datasets/uci/pendigits-mlp.csv",
@@ -128,16 +138,6 @@
   {
     "name": "pendigits-svm",
     "path": "datasets/uci/pendigits-svm.csv",
-    "n_labels": 300
-  },
-  {
-    "name": "creditcard",
-    "path": "datasets/origin/creditcard-lr.h5",
-    "n_labels": 3000
-  },
-  {
-    "name" : "devanagari-cnn",
-    "path": "datasets/uci/devanagari.csv",
     "n_labels": 300
   }
 ]

@@ -132,12 +132,6 @@ class StratifiedSampler(PassiveSampler):
             strata_size = self.strata.sizes_
             K = 10 # parameter that can be adjusted
             continue_sample = (n_sampled < strata_size * K).astype(int)
-            # check if each strata is fully sampled already
-            # strata_empty = np.ones(self.strata.n_strata_)
-            # for stratum_idx in np.arange(self.strata.n_strata_):
-            #     if np.all(self.strata._sampled[stratum_idx]):
-            #         strata_empty[stratum_idx] = 0
-            # opt_strata_weight = emp_strata_std * self.strata.sizes_ * strata_empty
             opt_strata_weight = emp_strata_std * self.strata.sizes_ * continue_sample
             opt_strata_weight[self.pos_strata_idx] = opt_strata_weight[self.pos_strata_idx]*partial_tp
             opt_strata_weight[self.neg_strata_idx] = opt_strata_weight[self.neg_strata_idx]*partial_fn
@@ -175,7 +169,8 @@ class StratifiedSampler(PassiveSampler):
             stratum_idx = kwargs['fixed_stratum']
         else:
             # for each stratified sampling method, we first guarantee at least two points per strata
-            if np.min(self.strata._n_sampled) < 2:
+            # as most methods can not make prediction when some strata are not sampled
+            if min(self.strata._n_sampled) < 2:
                 stratum_idx = np.argmin(self.strata._n_sampled)
             else:
                 stratum_idx = self.select_stratum(**kwargs)
