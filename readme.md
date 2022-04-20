@@ -20,22 +20,12 @@ python setup.py install
   python expt.py --dataset_list Amazon-Google --exp_type single
   ```
 
-  Example output:
-
-  (We additionally printout confidence interval for FILA-Thompson here)
-  <p align="center">
-  <img src="amazon-google_0.5.png" alt="amazon-google_0.5" style="zoom:50%;" />
-  </p>
 * Collecting statistics of the estimators:
 
   ```
   python expt.py --dataset_list Amazon-Google --exp_type stats --n_expts 100
   ```
 
-  Example output:
-  <p align="center">
-  <img src="amazon-google_0.5_stats.png" alt="amazon-google_0.5_stats" style="zoom:50%;" />
-  </p>
   The output figures are stored in <code>fig/</code> folder. The name of available datasets can be find in <code>dataset_config.json</code>.
 
 ### Modification based on OASIS
