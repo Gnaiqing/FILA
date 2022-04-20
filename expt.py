@@ -259,6 +259,8 @@ def multiple_run(dataset_name, data_path, config_path="exp_config.json",
 
             output_file = "exp/d=%s_s=%s_a=%.2f_%d.h5" % \
                           (dataset_name, obj["name"], alpha, random_seed)
+            if not os.path.exists("exp/"):
+                os.makedirs("exp/")
             if not restore or not os.path.exists(output_file):
                 oasis.repeat_expt(smplr, n_expts, n_labels, output_file, **sample_config)
             result = oasis.process_expt(output_file, F_gt = data.F_measure)

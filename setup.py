@@ -1,7 +1,7 @@
 from setuptools import setup
 
 def readme():
-    with open('README.rst') as f:
+    with open('oasis/README.rst') as f:
         return f.read()
 
 setup(name='oasis',
@@ -18,7 +18,9 @@ setup(name='oasis',
         'numpy',
         'tables',
         'scipy',
-        'sklearn'
+        'sklearn',
+        'matplotlib',
+        'pandas'
     ],
     include_package_data=True,
     zip_safe=False,
